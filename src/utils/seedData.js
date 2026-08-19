@@ -38,12 +38,17 @@ const seed = async () => {
 
     console.log('[Seed] Cleared old collections...');
 
-    // 1. Upload phoadi.jpg to AWS S3
-    const localImagePath = path.join(process.cwd(), 'phoadi.jpg');
-    const s3PhotoUrl = await uploadFileToS3(localImagePath, 'profiles/phoadi.jpg');
-    const finalPhotoUrl = s3PhotoUrl || 'https://whekel.s3.us-east-1.amazonaws.com/profiles/phoadi.jpg';
+    // 1. Upload phoadi.jpg and profile3.jpg to AWS S3
+    const localPhoadiPath = path.join(process.cwd(), 'phoadi.jpg');
+    const localProfile3Path = path.join(process.cwd(), 'profile3.jpg');
 
-    console.log(`[Seed] Profile photo ready: ${finalPhotoUrl}`);
+    const s3PhoadiUrl = await uploadFileToS3(localPhoadiPath, 'profiles/phoadi.jpg');
+    const s3Profile3Url = await uploadFileToS3(localProfile3Path, 'profiles/profile3.jpg');
+
+    const viratPhotoUrl = s3PhoadiUrl || 'https://whekel.s3.us-east-1.amazonaws.com/profiles/phoadi.jpg';
+    const virajPhotoUrl = s3Profile3Url || 'https://whekel.s3.us-east-1.amazonaws.com/profiles/profile3.jpg';
+
+    console.log(`[Seed] S3 Photos ready:\n - Virat Photo: ${viratPhotoUrl}\n - Viraj Photo: ${virajPhotoUrl}`);
 
     // 2. SuperAdmin Master Vendor Services Catalog (5 Breakdown Services)
     const masterServices = await VendorService.create([
@@ -95,17 +100,17 @@ const seed = async () => {
       vendorProfile: {
         shopName: 'Whekel Master Admin Hub',
         isVendorActive: false,
-        homeServiceAvailable: true,
+        homeServiceAvailable: false,
         offeredServices: [],
         pricingEstimate: 'N/A',
         rating: 5.0,
         completedJobs: 0,
         bio: 'SuperAdmin System Creator'
       },
-      profilePhoto: finalPhotoUrl
+      profilePhoto: viratPhotoUrl
     });
 
-    // 4. Seed Virat Singh as VendorAdmin for EVERY Vendor Service with homeServiceAvailable: true
+    // 4. Seed VendorAdmin 1: Virat Singh (Virat Repair Shop, 9889765643, homeService: true)
     const viratVendorAdmin = await Admin.create({
       name: 'Virat Singh',
       email: 'viratsingh@whekel.com',
@@ -118,15 +123,38 @@ const seed = async () => {
         shopName: 'Virat Repair Shop',
         isVendorActive: true,
         homeServiceAvailable: true,
-        offeredServices: allServiceNames,
+        offeredServices: allServiceNames, // Offered for every service
         pricingEstimate: '₹300 Base Charge + Parts at MRP',
         rating: 5.0,
         completedJobs: 215,
         bio: 'Virat Repair Shop - 24/7 Complete Automobile & Breakdown Solutions'
       },
-      profilePhoto: finalPhotoUrl
+      profilePhoto: viratPhotoUrl
     });
 
+    // 5. Seed VendorAdmin 2: Viraj Gupta (Viraj Sweet Shop, 9078564534, homeService: false)
+    const virajVendorAdmin = await Admin.create({
+      name: 'Viraj Gupta',
+      email: 'virajgupta@whekel.com',
+      phone: '9078564534',
+      password: 'password123',
+      role: 'VendorAdmin',
+      serviceLocation: { city: 'Bengaluru', district: 'Bengaluru Urban', pinCode: '560001', state: 'Karnataka', serviceRadiusKm: 100 },
+      assignedServices: allServiceNames,
+      vendorProfile: {
+        shopName: 'Viraj Sweet Shop',
+        isVendorActive: true,
+        homeServiceAvailable: false, // Home Service: NO
+        offeredServices: allServiceNames, // Offered for every service
+        pricingEstimate: '₹250 Fixed Rate',
+        rating: 4.9,
+        completedJobs: 180,
+        bio: 'Viraj Sweet Shop - Professional Automobile & On-Spot Repair Hub'
+      },
+      profilePhoto: virajPhotoUrl
+    });
+
+    // Seed Additional Regional VendorAdmins
     const vendorAdminDelhi = await Admin.create({
       name: 'Karan Towing & Breakdown Support Admin',
       email: 'vendoradmin@whekel.com',
@@ -145,7 +173,7 @@ const seed = async () => {
         completedJobs: 89,
         bio: '24/7 Rapid Response Towing & Battery Specialist in Delhi NCR'
       },
-      profilePhoto: finalPhotoUrl
+      profilePhoto: viratPhotoUrl
     });
 
     const vendorAdminMumbai = await Admin.create({
@@ -166,7 +194,7 @@ const seed = async () => {
         completedJobs: 76,
         bio: 'Citywide Emergency Breakdown & Towing Team in Mumbai'
       },
-      profilePhoto: finalPhotoUrl
+      profilePhoto: virajPhotoUrl
     });
 
     const rideAdmin = await Admin.create({
@@ -177,7 +205,7 @@ const seed = async () => {
       role: 'RideAdmin',
       serviceLocation: { city: 'Bengaluru', district: 'Bengaluru Urban', pinCode: '560001', state: 'Karnataka', serviceRadiusKm: 100 },
       assignedServices: ['Bike', 'Taxi', 'Bus', 'Local Transport', 'Multi-Stop Schedule'],
-      profilePhoto: finalPhotoUrl
+      profilePhoto: viratPhotoUrl
     });
 
     const parcelAdmin = await Admin.create({
@@ -188,7 +216,7 @@ const seed = async () => {
       role: 'ParcelAdmin',
       serviceLocation: { city: 'Mumbai', district: 'Mumbai City', pinCode: '400001', state: 'Maharashtra', serviceRadiusKm: 75 },
       assignedServices: ['Door-to-Door Courier', 'Express Parcel', 'Weight-based Delivery'],
-      profilePhoto: finalPhotoUrl
+      profilePhoto: virajPhotoUrl
     });
 
     const freightAdmin = await Admin.create({
@@ -199,7 +227,7 @@ const seed = async () => {
       role: 'FreightAdmin',
       serviceLocation: { city: 'Chennai', district: 'Chennai', pinCode: '600001', state: 'Tamil Nadu', serviceRadiusKm: 250 },
       assignedServices: ['Heavy Machinery Transport', 'Inter-City Bulk Shipping', 'Truck Load Logistics'],
-      profilePhoto: finalPhotoUrl
+      profilePhoto: viratPhotoUrl
     });
 
     const localAdmin = await Admin.create({
@@ -210,7 +238,7 @@ const seed = async () => {
       role: 'LocalAdmin',
       serviceLocation: { city: 'Pune', district: 'Pune', pinCode: '411001', state: 'Maharashtra', serviceRadiusKm: 40 },
       assignedServices: ['Auto Rickshaw', 'Local Shuttle Bus', 'City Commute'],
-      profilePhoto: finalPhotoUrl
+      profilePhoto: virajPhotoUrl
     });
 
     // Create Sample Passenger User
@@ -220,13 +248,13 @@ const seed = async () => {
       phone: '9876543210',
       password: 'password123',
       fcmToken: 'fcm_token_demo_12345',
-      profilePhoto: finalPhotoUrl,
+      profilePhoto: viratPhotoUrl,
       role: 'user'
     });
 
-    console.log('[Seed] Seeded homeServiceAvailable: true for all vendor admins!');
+    console.log('[Seed] Seeded Virat Singh (Virat Repair Shop) & Viraj Gupta (Viraj Sweet Shop) for EVERY service with AWS S3 photos!');
 
-    // 5. Create General Info
+    // 6. Create General Info
     await GeneralInfo.create({
       title: 'Whekel Mobility',
       tagline: 'All In One Transport App',
@@ -245,21 +273,21 @@ const seed = async () => {
       onboardingInfo: 'Join over 10,000+ verified vendor admins on the network.'
     });
 
-    // 6. Create Active Breakdown Request
+    // 7. Create Active Breakdown Request
     const demoVendorReq = await Vendor.create({
       userId: user._id,
-      phone: '9889765643',
+      phone: '9078564534',
       serviceName: 'Roadside Towing',
       profession: 'Roadside Towing',
       location: 'MG Road Metro Station',
       locationDetails: { city: 'Bengaluru', district: 'Bengaluru Urban', pinCode: '560001', state: 'Karnataka' },
-      description: 'Vehicle breakdown, flatbed towing required to Virat Repair Shop.',
+      description: 'Vehicle breakdown, flatbed towing required to Viraj Sweet Shop.',
       status: 'accepted',
-      assignedVendorId: viratVendorAdmin._id,
+      assignedVendorId: virajVendorAdmin._id,
       isActive: 'active'
     });
 
-    console.log('\n[Seed Success] homeServiceAvailable: true seeded successfully!');
+    console.log('\n[Seed Success] Seeded Viraj Gupta (Viraj Sweet Shop, 9078564534, homeService: false) successfully with AWS S3 photo!');
     process.exit(0);
   } catch (error) {
     console.error('[Seed Error]:', error);
