@@ -34,25 +34,74 @@ const seed = async () => {
 
     console.log('[Seed] Cleared old collections...');
 
-    // 1. Create Admins & Users
+    // 1. Create All Admin Roles with Location & Service Authority
     const superAdmin = await Admin.create({
-      name: 'Whekel SuperAdmin',
+      name: 'Whekel Global SuperAdmin',
       email: 'superadmin@whekel.com',
       phone: '9999999999',
       password: 'password123',
       role: 'SuperAdmin',
+      serviceLocation: { city: 'All', state: 'All', district: 'All', serviceRadiusKm: 10000 },
+      assignedServices: ['Ride', 'Parcel', 'Freight', 'Vendor', 'All'],
       profilePhoto: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb'
     });
 
     const rideAdmin = await Admin.create({
-      name: 'Ramesh Driver / Admin',
+      name: 'Ramesh Driver / Ride Admin (South Zone)',
       email: 'rideadmin@whekel.com',
       phone: '9876543211',
       password: 'password123',
       role: 'RideAdmin',
+      serviceLocation: { city: 'Bengaluru', state: 'Karnataka', district: 'Bengaluru Urban', serviceRadiusKm: 100 },
+      assignedServices: ['Bike', 'Taxi', 'Bus', 'Local Transport', 'Multi-Stop Schedule'],
       profilePhoto: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d'
     });
 
+    const parcelAdmin = await Admin.create({
+      name: 'Anita Courier Dispatch Admin (West Zone)',
+      email: 'parceladmin@whekel.com',
+      phone: '9876543222',
+      password: 'password123',
+      role: 'ParcelAdmin',
+      serviceLocation: { city: 'Mumbai', state: 'Maharashtra', district: 'Mumbai City', serviceRadiusKm: 75 },
+      assignedServices: ['Door-to-Door Courier', 'Express Parcel', 'Weight-based Delivery'],
+      profilePhoto: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2'
+    });
+
+    const freightAdmin = await Admin.create({
+      name: 'Vikram Heavy Freight Logistics Admin',
+      email: 'freightadmin@whekel.com',
+      phone: '9876543233',
+      password: 'password123',
+      role: 'FreightAdmin',
+      serviceLocation: { city: 'Chennai', state: 'Tamil Nadu', district: 'Chennai', serviceRadiusKm: 250 },
+      assignedServices: ['Heavy Machinery Transport', 'Inter-City Bulk Shipping', 'Truck Load Logistics'],
+      profilePhoto: 'https://images.unsplash.com/photo-1560250097-0b93528c311a'
+    });
+
+    const vendorAdmin = await Admin.create({
+      name: 'Karan Towing & Breakdown Support Admin',
+      email: 'vendoradmin@whekel.com',
+      phone: '9876543244',
+      password: 'password123',
+      role: 'VendorAdmin',
+      serviceLocation: { city: 'Delhi NCR', state: 'Delhi', district: 'New Delhi', serviceRadiusKm: 60 },
+      assignedServices: ['Roadside Mechanic', 'Towing Truck Support', 'Battery Jumpstart', 'Emergency Repairs'],
+      profilePhoto: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7'
+    });
+
+    const localAdmin = await Admin.create({
+      name: 'Suresh City Metro Local Transport Admin',
+      email: 'localadmin@whekel.com',
+      phone: '9876543255',
+      password: 'password123',
+      role: 'LocalAdmin',
+      serviceLocation: { city: 'Pune', state: 'Maharashtra', district: 'Pune', serviceRadiusKm: 40 },
+      assignedServices: ['Auto Rickshaw', 'Local Shuttle Bus', 'City Commute'],
+      profilePhoto: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e'
+    });
+
+    // Create Sample Passenger User
     const user = await UserAuth.create({
       name: 'Virat Singh',
       email: 'virat@example.com',
@@ -63,7 +112,7 @@ const seed = async () => {
       role: 'user'
     });
 
-    console.log('[Seed] Auth users and Admins created.');
+    console.log('[Seed] All 6 Admin Roles (SuperAdmin, RideAdmin, ParcelAdmin, FreightAdmin, VendorAdmin, LocalAdmin) & User created with location authority!');
 
     // 2. Create General Info
     await GeneralInfo.create({
@@ -87,7 +136,7 @@ const seed = async () => {
 
     console.log('[Seed] General Info populated.');
 
-    // 3. Create Ride
+    // 3. Create Ride (Assigned to RideAdmin)
     const demoRide = await Ride.create({
       userId: user._id,
       adminId: rideAdmin._id,
@@ -112,12 +161,12 @@ const seed = async () => {
 
     console.log('[Seed] Ride sample created.');
 
-    // 4. Create Parcel
+    // 4. Create Parcel (Assigned to ParcelAdmin)
     const demoParcel = await Parcel.create({
       userId: user._id,
       phone: '9876543210',
       pickup: 'Warehouse A, Whitefield',
-      pickupLocation: { city: 'Bengaluru', state: 'KA', district: 'Bengaluru Urban', pinCode: '560066' },
+      pickupLocation: { city: 'Mumbai', state: 'MH', district: 'Mumbai City', pinCode: '400001' },
       packageName: 'Electronics & Spare Cables',
       packageWeight: 5.5,
       recipientName: 'Rahul Sharma',
@@ -125,11 +174,11 @@ const seed = async () => {
       recipientAddress: 'Flat 302, Sea Crest Apartments, Marine Lines',
       acceptedAdmins: [
         {
-          adminId: rideAdmin._id,
-          name: rideAdmin.name,
-          phone: rideAdmin.phone,
-          profilePhoto: rideAdmin.profilePhoto,
-          profession: 'Express Courier Driver'
+          adminId: parcelAdmin._id,
+          name: parcelAdmin.name,
+          phone: parcelAdmin.phone,
+          profilePhoto: parcelAdmin.profilePhoto,
+          profession: 'Express Courier Dispatch Admin'
         }
       ],
       status: 'in_transit'
@@ -137,7 +186,7 @@ const seed = async () => {
 
     console.log('[Seed] Parcel sample created.');
 
-    // 5. Create Freight
+    // 5. Create Freight (Assigned to FreightAdmin)
     const demoFreight = await Freight.create({
       userId: user._id,
       phone: '9876543210',
@@ -148,27 +197,36 @@ const seed = async () => {
       recipientName: 'Suresh Kumar',
       recipientPhone: '9884012345',
       recipientAddress: 'Plot 45, Auto Nagar, Visakhapatnam',
+      acceptedAdmins: [
+        {
+          adminId: freightAdmin._id,
+          name: freightAdmin.name,
+          phone: freightAdmin.phone,
+          profilePhoto: freightAdmin.profilePhoto,
+          profession: 'Heavy Freight Logistics Admin'
+        }
+      ],
       status: 'pending'
     });
 
     console.log('[Seed] Freight sample created.');
 
-    // 6. Create Vendor Service Request
+    // 6. Create Vendor Service Request (Assigned to VendorAdmin)
     const demoVendor = await Vendor.create({
       userId: user._id,
       phone: '9876543210',
       profession: 'Vehicle Mechanic / Breakdown Support',
-      location: 'MG Road Metro Station',
-      locationDetails: { city: 'Bengaluru', state: 'KA' },
-      description: 'Roadside car battery jumpstart required immediately',
+      location: 'Connaught Place',
+      locationDetails: { city: 'Delhi NCR', state: 'Delhi' },
+      description: 'Roadside car battery jumpstart and towing required immediately',
       status: 'accepted',
-      assignedVendorId: rideAdmin._id,
+      assignedVendorId: vendorAdmin._id,
       isActive: 'active'
     });
 
     console.log('[Seed] Vendor service sample created.');
 
-    // 7. Create Fleet
+    // 7. Create Fleet (Assigned to RideAdmin)
     await Fleet.create({
       adminId: rideAdmin._id,
       name: 'Express Traveler Coach',
@@ -230,7 +288,7 @@ const seed = async () => {
 
     console.log('[Seed] Review sample created.');
 
-    console.log('\n[Seed Success] All 12 Whekel modules populated with initial data successfully!');
+    console.log('\n[Seed Success] All 6 Admins with Location Data and 12 Whekel modules populated successfully!');
     process.exit(0);
   } catch (error) {
     console.error('[Seed Error]:', error);

@@ -21,7 +21,7 @@ const parcelSchema = new mongoose.Schema(
       pinCode: { type: String }
     },
     packageName: { type: String, required: true },
-    packageWeight: { type: Number, required: true }, // in kg
+    packageWeight: { type: Number, required: true },
     recipientName: { type: String, required: true },
     recipientPhone: { type: String, required: true },
     recipientAddress: { type: String, required: true },

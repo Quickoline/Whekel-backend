@@ -126,7 +126,7 @@ export const updateUserProfile = async (req, res) => {
 // ADMIN AUTHENTICATION
 export const registerAdmin = async (req, res) => {
   try {
-    const { name, email, phone, password, role, fcmToken, profilePhoto } = req.body;
+    const { name, email, phone, password, role, serviceLocation, assignedServices, fcmToken, profilePhoto } = req.body;
 
     const adminExists = await Admin.findOne({ email });
     if (adminExists) {
@@ -139,6 +139,8 @@ export const registerAdmin = async (req, res) => {
       phone,
       password,
       role: role || 'RideAdmin',
+      serviceLocation: serviceLocation || { city: 'All', state: 'All', district: 'All', serviceRadiusKm: 100 },
+      assignedServices: assignedServices || ['Ride'],
       fcmToken: fcmToken || '',
       profilePhoto: profilePhoto || ''
     });
@@ -154,6 +156,8 @@ export const registerAdmin = async (req, res) => {
         email: admin.email,
         phone: admin.phone,
         role: admin.role,
+        serviceLocation: admin.serviceLocation,
+        assignedServices: admin.assignedServices,
         fcmToken: admin.fcmToken,
         profilePhoto: admin.profilePhoto
       }
@@ -179,6 +183,8 @@ export const loginAdmin = async (req, res) => {
           email: admin.email,
           phone: admin.phone,
           role: admin.role,
+          serviceLocation: admin.serviceLocation,
+          assignedServices: admin.assignedServices,
           fcmToken: admin.fcmToken,
           profilePhoto: admin.profilePhoto
         }

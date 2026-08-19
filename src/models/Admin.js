@@ -12,6 +12,13 @@ const adminSchema = new mongoose.Schema(
       enum: ['SuperAdmin', 'RideAdmin', 'ParcelAdmin', 'FreightAdmin', 'VendorAdmin', 'LocalAdmin'],
       default: 'RideAdmin'
     },
+    serviceLocation: {
+      city: { type: String, default: 'All' },
+      state: { type: String, default: 'All' },
+      district: { type: String, default: 'All' },
+      serviceRadiusKm: { type: Number, default: 100 }
+    },
+    assignedServices: [{ type: String }],
     fcmToken: { type: String, default: '' },
     profilePhoto: { type: String, default: '' }
   },

@@ -13,7 +13,7 @@ const callSchema = new mongoose.Schema(
       default: 'initiated'
     },
     roomId: { type: String, required: true },
-    duration: { type: Number, default: 0 }, // in seconds
+    duration: { type: Number, default: 0 },
     relatedOrderId: { type: mongoose.Schema.Types.ObjectId, required: true },
     relatedOrderType: {
       type: String,
