@@ -95,6 +95,7 @@ const seed = async () => {
       vendorProfile: {
         shopName: 'Whekel Master Admin Hub',
         isVendorActive: false,
+        homeServiceAvailable: true,
         offeredServices: [],
         pricingEstimate: 'N/A',
         rating: 5.0,
@@ -104,7 +105,7 @@ const seed = async () => {
       profilePhoto: finalPhotoUrl
     });
 
-    // 4. Seed Virat Singh as VendorAdmin for EVERY Vendor Service with Virat Repair Shop & AWS S3 Photo
+    // 4. Seed Virat Singh as VendorAdmin for EVERY Vendor Service with homeServiceAvailable: true
     const viratVendorAdmin = await Admin.create({
       name: 'Virat Singh',
       email: 'viratsingh@whekel.com',
@@ -116,7 +117,8 @@ const seed = async () => {
       vendorProfile: {
         shopName: 'Virat Repair Shop',
         isVendorActive: true,
-        offeredServices: allServiceNames, // All 5 vendor services chosen
+        homeServiceAvailable: true,
+        offeredServices: allServiceNames,
         pricingEstimate: '₹300 Base Charge + Parts at MRP',
         rating: 5.0,
         completedJobs: 215,
@@ -125,7 +127,6 @@ const seed = async () => {
       profilePhoto: finalPhotoUrl
     });
 
-    // Also Seed Delhi VendorAdmin with Virat Repair Shop fallback
     const vendorAdminDelhi = await Admin.create({
       name: 'Karan Towing & Breakdown Support Admin',
       email: 'vendoradmin@whekel.com',
@@ -137,6 +138,7 @@ const seed = async () => {
       vendorProfile: {
         shopName: 'Delhi Towing Hub',
         isVendorActive: true,
+        homeServiceAvailable: true,
         offeredServices: ['Roadside Towing', 'Battery Jumpstart', 'Flat Tire Replacement', 'Emergency Fuel Delivery'],
         pricingEstimate: '₹400 Base Rate + ₹20/km',
         rating: 4.8,
@@ -157,6 +159,7 @@ const seed = async () => {
       vendorProfile: {
         shopName: 'Mumbai Marine Garage',
         isVendorActive: true,
+        homeServiceAvailable: true,
         offeredServices: allServiceNames,
         pricingEstimate: '₹450 Base Charge',
         rating: 4.7,
@@ -221,7 +224,7 @@ const seed = async () => {
       role: 'user'
     });
 
-    console.log('[Seed] Seeded Virat Singh (Virat Repair Shop, 9889765643) for EVERY vendor service with AWS S3 photo!');
+    console.log('[Seed] Seeded homeServiceAvailable: true for all vendor admins!');
 
     // 5. Create General Info
     await GeneralInfo.create({
@@ -242,7 +245,7 @@ const seed = async () => {
       onboardingInfo: 'Join over 10,000+ verified vendor admins on the network.'
     });
 
-    // 6. Create Active Breakdown Request assigned to Virat Singh (Virat Repair Shop)
+    // 6. Create Active Breakdown Request
     const demoVendorReq = await Vendor.create({
       userId: user._id,
       phone: '9889765643',
@@ -256,7 +259,7 @@ const seed = async () => {
       isActive: 'active'
     });
 
-    console.log('\n[Seed Success] Virat Singh (Virat Repair Shop, 9889765643) seeded successfully with AWS S3 photo!');
+    console.log('\n[Seed Success] homeServiceAvailable: true seeded successfully!');
     process.exit(0);
   } catch (error) {
     console.error('[Seed Error]:', error);

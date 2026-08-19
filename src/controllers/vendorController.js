@@ -104,11 +104,13 @@ export const getPublicVendorOrders = async (req, res) => {
 
     const primaryVendor = matchingAdmins.length > 0 ? matchingAdmins[0] : null;
     const assignedPhone = primaryVendor ? primaryVendor.phone : (publicOrders.length > 0 && publicOrders[0].assignedVendorId ? publicOrders[0].assignedVendorId.phone : '9889765643');
+    const homeServiceAvailable = primaryVendor ? (primaryVendor.vendorProfile?.homeServiceAvailable ?? true) : true;
 
     res.json({
       success: true,
       assignedPhone,
       phone: assignedPhone,
+      homeServiceAvailable,
       assignedVendor: primaryVendor ? {
         vendorAdminId: primaryVendor._id,
         name: primaryVendor.name,
@@ -116,6 +118,7 @@ export const getPublicVendorOrders = async (req, res) => {
         phone: primaryVendor.phone,
         email: primaryVendor.email,
         profilePhoto: primaryVendor.profilePhoto,
+        homeServiceAvailable,
         serviceLocation: primaryVendor.serviceLocation,
         vendorProfile: primaryVendor.vendorProfile
       } : null,
@@ -125,6 +128,7 @@ export const getPublicVendorOrders = async (req, res) => {
         _id: o._id,
         phone: o.assignedVendorId ? o.assignedVendorId.phone : assignedPhone,
         assignedPhone: o.assignedVendorId ? o.assignedVendorId.phone : assignedPhone,
+        homeServiceAvailable,
         serviceName: o.serviceName || o.profession,
         profession: o.profession || o.serviceName,
         location: o.locationDetails,
@@ -251,7 +255,7 @@ export const deleteMasterService = async (req, res) => {
 
 export const updateVendorOfferedServices = async (req, res) => {
   try {
-    const { shopName, offeredServices, serviceLocation, pricingEstimate, bio, isVendorActive } = req.body;
+    const { shopName, offeredServices, serviceLocation, pricingEstimate, bio, isVendorActive, homeServiceAvailable } = req.body;
 
     const admin = await Admin.findById(req.user._id);
     if (!admin) {
@@ -267,6 +271,7 @@ export const updateVendorOfferedServices = async (req, res) => {
     if (pricingEstimate) admin.vendorProfile.pricingEstimate = pricingEstimate;
     if (bio) admin.vendorProfile.bio = bio;
     if (isVendorActive !== undefined) admin.vendorProfile.isVendorActive = isVendorActive;
+    if (homeServiceAvailable !== undefined) admin.vendorProfile.homeServiceAvailable = homeServiceAvailable;
 
     if (serviceLocation) {
       admin.serviceLocation = {
@@ -390,6 +395,7 @@ export const getVendorAdminProfiles = async (req, res) => {
         email: v.email,
         phone: v.phone,
         profilePhoto: v.profilePhoto,
+        homeServiceAvailable: v.vendorProfile?.homeServiceAvailable ?? true,
         role: v.role,
         serviceLocation: v.serviceLocation,
         vendorProfile: v.vendorProfile
