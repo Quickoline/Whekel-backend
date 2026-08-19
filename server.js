@@ -76,6 +76,7 @@ app.use('/api/ride', rideRoutes);
 app.use('/api/parcel', parcelRoutes);
 app.use('/api/freight', freightRoutes);
 app.use('/api/vendor', vendorRoutes);
+app.use('/api/admin/vendor', vendorRoutes); // Enables /api/admin/vendor/* routes
 app.use('/api/fleet', fleetRoutes);
 app.use('/api/partner', partnerRoutes);
 app.use('/api/call', callRoutes);

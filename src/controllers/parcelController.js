@@ -1,6 +1,5 @@
 import Parcel from '../models/Parcel.js';
 
-// User: Create Parcel Order
 export const createParcel = async (req, res) => {
   try {
     const { phone, pickup, pickupLocation, packageName, packageWeight, recipientName, recipientPhone, recipientAddress } = req.body;
@@ -24,7 +23,6 @@ export const createParcel = async (req, res) => {
   }
 };
 
-// User / Driver: Get My Parcels
 export const getMyParcels = async (req, res) => {
   try {
     const parcels = await Parcel.find({ userId: req.user._id }).sort({ createdAt: -1 });
@@ -34,7 +32,6 @@ export const getMyParcels = async (req, res) => {
   }
 };
 
-// Get Parcel Details
 export const getParcelById = async (req, res) => {
   try {
     const parcel = await Parcel.findById(req.params.id).populate('userId', 'name phone email');
@@ -47,7 +44,6 @@ export const getParcelById = async (req, res) => {
   }
 };
 
-// Admin / Courier Partner: Accept Parcel Dispatch
 export const acceptParcel = async (req, res) => {
   try {
     const parcel = await Parcel.findById(req.params.id);
@@ -75,7 +71,6 @@ export const acceptParcel = async (req, res) => {
   }
 };
 
-// Update Parcel Status
 export const updateParcelStatus = async (req, res) => {
   try {
     const { status } = req.body;
@@ -94,7 +89,6 @@ export const updateParcelStatus = async (req, res) => {
   }
 };
 
-// Admin: Get All Parcels (ParcelAdmin / SuperAdmin)
 export const getAllParcelsAdmin = async (req, res) => {
   try {
     const { status, city } = req.query;
@@ -112,7 +106,6 @@ export const getAllParcelsAdmin = async (req, res) => {
   }
 };
 
-// Admin: Delete Parcel
 export const deleteParcelAdmin = async (req, res) => {
   try {
     const parcel = await Parcel.findByIdAndDelete(req.params.id);

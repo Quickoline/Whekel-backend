@@ -1,6 +1,5 @@
 import Fleet from '../models/Fleet.js';
 
-// Admin / Driver: Register New Vehicle / Fleet
 export const createVehicle = async (req, res) => {
   try {
     const { name, model, number, type, fuelType, acType, sleeperType, seatCapacity, routes } = req.body;
@@ -29,7 +28,6 @@ export const createVehicle = async (req, res) => {
   }
 };
 
-// Get All Fleets (Public / Passengers can view available vehicles & schedules)
 export const getAllVehicles = async (req, res) => {
   try {
     const { type, fuelType, acType } = req.query;
@@ -45,7 +43,6 @@ export const getAllVehicles = async (req, res) => {
   }
 };
 
-// Get My Fleet Vehicles (Driver / Partner / Admin)
 export const getMyVehicles = async (req, res) => {
   try {
     const vehicles = await Fleet.find({ adminId: req.user._id });
@@ -55,7 +52,6 @@ export const getMyVehicles = async (req, res) => {
   }
 };
 
-// Get Single Vehicle Details
 export const getVehicleById = async (req, res) => {
   try {
     const vehicle = await Fleet.findById(req.params.id).populate('adminId', 'name phone email profilePhoto');
@@ -68,7 +64,6 @@ export const getVehicleById = async (req, res) => {
   }
 };
 
-// Update Vehicle Details / Bus Routes
 export const updateVehicle = async (req, res) => {
   try {
     const vehicle = await Fleet.findById(req.params.id);
@@ -85,7 +80,6 @@ export const updateVehicle = async (req, res) => {
   }
 };
 
-// Delete Vehicle
 export const deleteVehicle = async (req, res) => {
   try {
     const vehicle = await Fleet.findByIdAndDelete(req.params.id);

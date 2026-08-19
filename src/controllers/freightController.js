@@ -1,6 +1,5 @@
 import Freight from '../models/Freight.js';
 
-// User: Create Freight Order
 export const createFreight = async (req, res) => {
   try {
     const { phone, pickup, pickupLocation, packageName, packageWeight, recipientName, recipientPhone, recipientAddress } = req.body;
@@ -24,7 +23,6 @@ export const createFreight = async (req, res) => {
   }
 };
 
-// User / Driver: Get My Freight Shipments
 export const getMyFreight = async (req, res) => {
   try {
     const freightList = await Freight.find({ userId: req.user._id }).sort({ createdAt: -1 });
@@ -34,7 +32,6 @@ export const getMyFreight = async (req, res) => {
   }
 };
 
-// Get Freight Details
 export const getFreightById = async (req, res) => {
   try {
     const freight = await Freight.findById(req.params.id).populate('userId', 'name phone email');
@@ -47,7 +44,6 @@ export const getFreightById = async (req, res) => {
   }
 };
 
-// Admin / Freight Partner: Accept Freight Order
 export const acceptFreight = async (req, res) => {
   try {
     const freight = await Freight.findById(req.params.id);
@@ -75,7 +71,6 @@ export const acceptFreight = async (req, res) => {
   }
 };
 
-// Update Freight Status
 export const updateFreightStatus = async (req, res) => {
   try {
     const { status } = req.body;
@@ -94,7 +89,6 @@ export const updateFreightStatus = async (req, res) => {
   }
 };
 
-// Admin: Get All Freight Shipments (FreightAdmin / SuperAdmin)
 export const getAllFreightAdmin = async (req, res) => {
   try {
     const { status, city } = req.query;
@@ -112,7 +106,6 @@ export const getAllFreightAdmin = async (req, res) => {
   }
 };
 
-// Admin: Delete Freight Order
 export const deleteFreightAdmin = async (req, res) => {
   try {
     const freight = await Freight.findByIdAndDelete(req.params.id);

@@ -1,5 +1,6 @@
 import express from 'express';
 import {
+  getVendorDropdownOptions,
   createMasterService,
   getMasterServices,
   updateMasterService,
@@ -17,6 +18,11 @@ import {
 import { protect, authorizeRoles } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
+
+// Dropdown options endpoints for Frontend App & Admin Portal
+router.get('/dropdown-options', getVendorDropdownOptions);
+router.get('/admin/dropdown-options', getVendorDropdownOptions);
+router.get('/dropdown', getVendorDropdownOptions);
 
 // 1. SuperAdmin Master Catalog Routes
 router.get('/catalog', getMasterServices);

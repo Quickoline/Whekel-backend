@@ -3,6 +3,50 @@ import Admin from '../models/Admin.js';
 import Vendor from '../models/Vendor.js';
 
 // ==========================================
+// DROPDOWN OPTIONS FOR FRONTEND ADMIN & USER
+// ==========================================
+
+export const getVendorDropdownOptions = async (req, res) => {
+  try {
+    const services = await VendorService.find({ isActive: true });
+
+    const vendorAdmins = await Admin.find({
+      role: { $in: ['VendorAdmin', 'SuperAdmin'] }
+    }).select('serviceLocation');
+
+    const locationsMap = new Map();
+    vendorAdmins.forEach((v) => {
+      if (v.serviceLocation?.city && v.serviceLocation.city !== 'All') {
+        locationsMap.set(v.serviceLocation.city, {
+          city: v.serviceLocation.city,
+          state: v.serviceLocation.state || ''
+        });
+      }
+    });
+
+    const locations = Array.from(locationsMap.values());
+    const categories = Array.from(new Set(services.map((s) => s.category)));
+
+    res.json({
+      success: true,
+      data: {
+        services: services.map((s) => ({
+          id: s._id,
+          name: s.name,
+          category: s.category,
+          icon: s.icon,
+          description: s.description
+        })),
+        locations,
+        categories
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// ==========================================
 // 1. SUPERADMIN MASTER CATALOG CONTROLLERS
 // ==========================================
 
@@ -108,7 +152,6 @@ export const updateVendorOfferedServices = async (req, res) => {
 // 3. USER FLOW: LOCATION -> SERVICES -> VENDOR PROFILES
 // ==========================================
 
-// Step 1: Get list of active cities/locations where Vendor Admins are operating
 export const getAvailableLocations = async (req, res) => {
   try {
     const vendorAdmins = await Admin.find({
@@ -130,7 +173,6 @@ export const getAvailableLocations = async (req, res) => {
   }
 };
 
-// Step 2: Select Location -> Fetch available services offered by Vendor Admins in that location
 export const getAvailableServicesByLocation = async (req, res) => {
   try {
     const { city, state } = req.query;
@@ -149,7 +191,6 @@ export const getAvailableServicesByLocation = async (req, res) => {
 
     const vendorAdmins = await Admin.find(filter).select('vendorProfile.offeredServices');
 
-    // Aggregate all unique offered services in this location
     const serviceNamesSet = new Set();
     vendorAdmins.forEach((admin) => {
       admin.vendorProfile?.offeredServices?.forEach((service) => {
@@ -159,7 +200,6 @@ export const getAvailableServicesByLocation = async (req, res) => {
 
     const offeredServiceNames = Array.from(serviceNamesSet);
 
-    // Fetch master service details for these available service names
     const services = await VendorService.find({
       name: { $in: offeredServiceNames },
       isActive: true
@@ -176,7 +216,6 @@ export const getAvailableServicesByLocation = async (req, res) => {
   }
 };
 
-// Step 3: Select Service -> Fetch profiles list of Vendor Admins in location offering that service
 export const getVendorAdminProfiles = async (req, res) => {
   try {
     const { city, serviceName } = req.query;
@@ -221,7 +260,6 @@ export const getVendorAdminProfiles = async (req, res) => {
   }
 };
 
-// Step 4: Book Vendor Service with Selected Vendor Admin
 export const createVendorBooking = async (req, res) => {
   try {
     const { serviceName, vendorAdminId, phone, location, locationDetails, description } = req.body;
@@ -249,7 +287,6 @@ export const createVendorBooking = async (req, res) => {
   }
 };
 
-// Get My Vendor Bookings
 export const getMyVendorRequests = async (req, res) => {
   try {
     const requests = await Vendor.find({ userId: req.user._id })
@@ -262,7 +299,6 @@ export const getMyVendorRequests = async (req, res) => {
   }
 };
 
-// Vendor Admin / Provider: Accept Booking Request
 export const acceptVendorRequest = async (req, res) => {
   try {
     const vendorReq = await Vendor.findById(req.params.id);
@@ -280,7 +316,6 @@ export const acceptVendorRequest = async (req, res) => {
   }
 };
 
-// Update Booking Status
 export const updateVendorStatus = async (req, res) => {
   try {
     const { status } = req.body;
@@ -299,7 +334,6 @@ export const updateVendorStatus = async (req, res) => {
   }
 };
 
-// Admin: Get All Vendor Requests
 export const getAllVendorAdmin = async (req, res) => {
   try {
     const { status, city } = req.query;

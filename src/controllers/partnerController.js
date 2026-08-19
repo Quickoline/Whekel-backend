@@ -1,6 +1,5 @@
 import Partner from '../models/Partner.js';
 
-// Public / Candidate: Submit Partner Onboarding Application
 export const applyPartner = async (req, res) => {
   try {
     const { name, email, phone, businessName, serviceType, location, additionalInfo } = req.body;
@@ -26,7 +25,6 @@ export const applyPartner = async (req, res) => {
   }
 };
 
-// Admin: Get All Partner Applications (SuperAdmin / Service Admins)
 export const getAllPartners = async (req, res) => {
   try {
     const { status, serviceType } = req.query;
@@ -41,7 +39,6 @@ export const getAllPartners = async (req, res) => {
   }
 };
 
-// Admin: Get Partner Application by ID
 export const getPartnerById = async (req, res) => {
   try {
     const partner = await Partner.findById(req.params.id);
@@ -54,7 +51,6 @@ export const getPartnerById = async (req, res) => {
   }
 };
 
-// Admin Approval Desk: Update Status (pending, reviewing, approved, rejected)
 export const updatePartnerStatus = async (req, res) => {
   try {
     const { status } = req.body;
@@ -73,7 +69,6 @@ export const updatePartnerStatus = async (req, res) => {
   }
 };
 
-// Admin: Delete Partner Application
 export const deletePartner = async (req, res) => {
   try {
     const partner = await Partner.findByIdAndDelete(req.params.id);
