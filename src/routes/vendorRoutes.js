@@ -1,5 +1,6 @@
 import express from 'express';
 import {
+  getPublicVendorOrders,
   getVendorDropdownOptions,
   createMasterService,
   getMasterServices,
@@ -18,6 +19,10 @@ import {
 import { protect, authorizeRoles } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
+
+// Public Vendor Orders & Assigned Phone Lookup (Called by VendorApi.getPublicOrders)
+router.get('/orders/public', getPublicVendorOrders);
+router.get('/public', getPublicVendorOrders);
 
 // Dropdown options endpoints for Frontend App & Admin Portal
 router.get('/dropdown-options', getVendorDropdownOptions);

@@ -3,6 +3,101 @@ import Admin from '../models/Admin.js';
 import Vendor from '../models/Vendor.js';
 
 // ==========================================
+// PUBLIC VENDOR ORDERS & ASSIGNED PHONE LOOKUP
+// ==========================================
+
+export const getPublicVendorOrders = async (req, res) => {
+  try {
+    const { profession, serviceName, city, state, location } = req.query;
+
+    const targetProfession = profession || serviceName;
+    let targetCity = city;
+    let targetState = state;
+
+    if (location) {
+      try {
+        let parsed = typeof location === 'string' ? JSON.parse(location) : location;
+        if (parsed.city) targetCity = parsed.city;
+        if (parsed.state) targetState = parsed.state;
+      } catch (e) {
+        const cityMatch = String(location).match(/city[:=]\s*([^,}]+)/i);
+        const stateMatch = String(location).match(/state[:=]\s*([^,}]+)/i);
+        if (cityMatch) targetCity = cityMatch[1].trim();
+        if (stateMatch) targetState = stateMatch[1].trim();
+      }
+    }
+
+    // Find matching Vendor Admins operating in this location offering targetProfession
+    const matchingAdmins = await Admin.find({
+      role: { $in: ['VendorAdmin', 'SuperAdmin'] },
+      'vendorProfile.isVendorActive': true,
+      ...(targetProfession ? {
+        $or: [
+          { 'vendorProfile.offeredServices': new RegExp(targetProfession, 'i') },
+          { assignedServices: new RegExp(targetProfession, 'i') }
+        ]
+      } : {}),
+      ...(targetCity ? {
+        $or: [
+          { 'serviceLocation.city': new RegExp(targetCity, 'i') },
+          { 'serviceLocation.city': 'All' }
+        ]
+      } : {})
+    }).select('-password');
+
+    // Find existing vendor orders/requests
+    const orderFilter = {};
+    if (targetProfession) {
+      orderFilter.$or = [
+        { profession: new RegExp(targetProfession, 'i') },
+        { serviceName: new RegExp(targetProfession, 'i') }
+      ];
+    }
+    if (targetCity) {
+      orderFilter['locationDetails.city'] = new RegExp(targetCity, 'i');
+    }
+
+    const publicOrders = await Vendor.find(orderFilter)
+      .populate('assignedVendorId', 'name phone profilePhoto vendorProfile serviceLocation')
+      .sort({ createdAt: -1 });
+
+    const primaryVendor = matchingAdmins.length > 0 ? matchingAdmins[0] : null;
+    const assignedPhone = primaryVendor ? primaryVendor.phone : (publicOrders.length > 0 && publicOrders[0].assignedVendorId ? publicOrders[0].assignedVendorId.phone : '9876543244');
+
+    res.json({
+      success: true,
+      assignedPhone,
+      phone: assignedPhone,
+      assignedVendor: primaryVendor ? {
+        vendorAdminId: primaryVendor._id,
+        name: primaryVendor.name,
+        phone: primaryVendor.phone,
+        email: primaryVendor.email,
+        profilePhoto: primaryVendor.profilePhoto,
+        serviceLocation: primaryVendor.serviceLocation,
+        vendorProfile: primaryVendor.vendorProfile
+      } : null,
+      count: publicOrders.length,
+      data: publicOrders.map((o) => ({
+        id: o._id,
+        _id: o._id,
+        phone: o.assignedVendorId ? o.assignedVendorId.phone : assignedPhone,
+        assignedPhone: o.assignedVendorId ? o.assignedVendorId.phone : assignedPhone,
+        serviceName: o.serviceName || o.profession,
+        profession: o.profession || o.serviceName,
+        location: o.locationDetails,
+        locationDetails: o.locationDetails,
+        description: o.description,
+        status: o.status,
+        createdAt: o.createdAt
+      }))
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// ==========================================
 // DROPDOWN OPTIONS FOR FRONTEND ADMIN & USER
 // ==========================================
 
