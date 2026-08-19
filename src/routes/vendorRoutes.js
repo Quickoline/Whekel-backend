@@ -17,6 +17,10 @@ import {
   getAllVendorAdmin
 } from '../controllers/vendorController.js';
 import {
+  createReview,
+  getReviewsByVendorAdmin
+} from '../controllers/reviewController.js';
+import {
   getOrCreateConversation,
   sendMessage,
   getMessages,
@@ -25,6 +29,11 @@ import {
 import { protect, authorizeRoles } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
+
+// Order Rating & Vendor Review Endpoints
+router.post('/orders/:id/rate', protect, createReview);
+router.post('/rate', protect, createReview);
+router.get('/reviews/:vendorAdminId', getReviewsByVendorAdmin);
 
 // Vendor In-App Chat Routes
 router.post('/chat/conversation', protect, getOrCreateConversation);
