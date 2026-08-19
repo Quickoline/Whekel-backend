@@ -1,34 +1,42 @@
 import Conversation from '../models/Chat.js';
 import Message from '../models/Message.js';
 
-// Get or Create Conversation for an Order
+// Get or Create Conversation for Vendor / Order Chat
 export const getOrCreateConversation = async (req, res) => {
   try {
-    const { relatedOrderId, relatedOrderType, partnerId } = req.body;
+    const { conversationId: reqConvId, relatedOrderId, relatedOrderType, partnerId, vendorId, vendorAdminId } = req.body;
 
-    const conversationId = `conv_${relatedOrderType}_${relatedOrderId}`;
+    const targetPartnerId = partnerId || vendorAdminId || vendorId || req.user._id;
+    const targetOrderType = relatedOrderType || 'vendor';
+    const targetOrderId = relatedOrderId || targetPartnerId;
+
+    const conversationId = reqConvId || `conv_${targetOrderType}_${targetOrderId}`;
 
     let conversation = await Conversation.findOne({ conversationId });
 
     if (!conversation) {
       conversation = await Conversation.create({
         conversationId,
-        relatedOrderId,
-        relatedOrderType,
+        relatedOrderId: targetOrderId,
+        relatedOrderType: targetOrderType,
         participants: [
           { userId: req.user._id, userModel: req.accountType === 'Admin' ? 'Admin' : 'UserAuth' },
-          { userId: partnerId, userModel: req.accountType === 'Admin' ? 'UserAuth' : 'Admin' }
+          { userId: targetPartnerId, userModel: req.accountType === 'Admin' ? 'UserAuth' : 'Admin' }
         ]
       });
     }
 
-    res.json({ success: true, data: conversation });
+    res.json({
+      success: true,
+      conversationId: conversation.conversationId,
+      data: conversation
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// Send Message
+// Send Chat Message
 export const sendMessage = async (req, res) => {
   try {
     const { conversationId, messageType, text, attachment } = req.body;

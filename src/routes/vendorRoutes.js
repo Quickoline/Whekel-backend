@@ -16,11 +16,23 @@ import {
   updateVendorStatus,
   getAllVendorAdmin
 } from '../controllers/vendorController.js';
+import {
+  getOrCreateConversation,
+  sendMessage,
+  getMessages,
+  markMessagesRead
+} from '../controllers/chatController.js';
 import { protect, authorizeRoles } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-// Public Vendor Orders & Assigned Phone Lookup (Called by VendorApi.getPublicOrders)
+// Vendor In-App Chat Routes
+router.post('/chat/conversation', protect, getOrCreateConversation);
+router.post('/chat/message', protect, sendMessage);
+router.get('/chat/messages/:conversationId', protect, getMessages);
+router.put('/chat/read/:conversationId', protect, markMessagesRead);
+
+// Public Vendor Orders & Assigned Phone Lookup
 router.get('/orders/public', getPublicVendorOrders);
 router.get('/public', getPublicVendorOrders);
 
