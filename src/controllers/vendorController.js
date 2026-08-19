@@ -78,7 +78,6 @@ export const getPublicVendorOrders = async (req, res) => {
 
     const locationFilter = buildAdminLocationFilter(req.query);
 
-    // Strictly query VendorAdmin accounts offering targetProfession matching any location criteria
     const matchingAdmins = await Admin.find({
       role: 'VendorAdmin',
       'vendorProfile.isVendorActive': true,
@@ -91,7 +90,6 @@ export const getPublicVendorOrders = async (req, res) => {
       ...locationFilter
     }).select('-password');
 
-    // Find existing vendor orders/requests
     const orderFilter = {};
     if (targetProfession) {
       orderFilter.$or = [
@@ -105,7 +103,7 @@ export const getPublicVendorOrders = async (req, res) => {
       .sort({ createdAt: -1 });
 
     const primaryVendor = matchingAdmins.length > 0 ? matchingAdmins[0] : null;
-    const assignedPhone = primaryVendor ? primaryVendor.phone : (publicOrders.length > 0 && publicOrders[0].assignedVendorId ? publicOrders[0].assignedVendorId.phone : '9876543244');
+    const assignedPhone = primaryVendor ? primaryVendor.phone : (publicOrders.length > 0 && publicOrders[0].assignedVendorId ? publicOrders[0].assignedVendorId.phone : '9889765643');
 
     res.json({
       success: true,
@@ -114,6 +112,7 @@ export const getPublicVendorOrders = async (req, res) => {
       assignedVendor: primaryVendor ? {
         vendorAdminId: primaryVendor._id,
         name: primaryVendor.name,
+        shopName: primaryVendor.vendorProfile?.shopName || 'Virat Repair Shop',
         phone: primaryVendor.phone,
         email: primaryVendor.email,
         profilePhoto: primaryVendor.profilePhoto,
@@ -252,7 +251,7 @@ export const deleteMasterService = async (req, res) => {
 
 export const updateVendorOfferedServices = async (req, res) => {
   try {
-    const { offeredServices, serviceLocation, pricingEstimate, bio, isVendorActive } = req.body;
+    const { shopName, offeredServices, serviceLocation, pricingEstimate, bio, isVendorActive } = req.body;
 
     const admin = await Admin.findById(req.user._id);
     if (!admin) {
@@ -263,6 +262,7 @@ export const updateVendorOfferedServices = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Only VendorAdmin accounts can choose services to deliver' });
     }
 
+    if (shopName) admin.vendorProfile.shopName = shopName;
     if (offeredServices) admin.vendorProfile.offeredServices = offeredServices;
     if (pricingEstimate) admin.vendorProfile.pricingEstimate = pricingEstimate;
     if (bio) admin.vendorProfile.bio = bio;
@@ -386,6 +386,7 @@ export const getVendorAdminProfiles = async (req, res) => {
       data: vendorAdmins.map((v) => ({
         vendorAdminId: v._id,
         name: v.name,
+        shopName: v.vendorProfile?.shopName || 'Virat Repair Shop',
         email: v.email,
         phone: v.phone,
         profilePhoto: v.profilePhoto,

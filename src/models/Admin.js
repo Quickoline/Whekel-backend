@@ -21,6 +21,7 @@ const adminSchema = new mongoose.Schema(
     },
     assignedServices: [{ type: String }],
     vendorProfile: {
+      shopName: { type: String, default: '' },
       isVendorActive: { type: Boolean, default: true },
       offeredServices: [{ type: String }],
       pricingEstimate: { type: String, default: 'Contact for Quote' },
