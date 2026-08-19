@@ -15,10 +15,10 @@ const parcelSchema = new mongoose.Schema(
     phone: { type: String, required: true },
     pickup: { type: String, required: true },
     pickupLocation: {
-      city: { type: String, required: true },
-      state: { type: String, required: true },
-      district: { type: String },
-      pinCode: { type: String }
+      city: { type: String, trim: true, required: true },
+      district: { type: String, trim: true },
+      pinCode: { type: String, trim: true },
+      state: { type: String, trim: true, required: true }
     },
     packageName: { type: String, required: true },
     packageWeight: { type: Number, required: true },

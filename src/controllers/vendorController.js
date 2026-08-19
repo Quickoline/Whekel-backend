@@ -2,32 +2,83 @@ import VendorService from '../models/VendorService.js';
 import Admin from '../models/Admin.js';
 import Vendor from '../models/Vendor.js';
 
+// Helper: Build Flexible Location Search Filter across city, district, pinCode, state
+const buildAdminLocationFilter = (query) => {
+  const { city, district, pinCode, state, location, query: generalQuery } = query;
+
+  let locCity = city;
+  let locDistrict = district;
+  let locPinCode = pinCode;
+  let locState = state;
+  let rawSearchTerm = generalQuery;
+
+  if (location) {
+    if (typeof location === 'object') {
+      if (location.city) locCity = location.city;
+      if (location.district) locDistrict = location.district;
+      if (location.pinCode) locPinCode = location.pinCode;
+      if (location.state) locState = location.state;
+    } else if (typeof location === 'string') {
+      try {
+        const parsed = JSON.parse(location);
+        if (parsed.city) locCity = parsed.city;
+        if (parsed.district) locDistrict = parsed.district;
+        if (parsed.pinCode) locPinCode = parsed.pinCode;
+        if (parsed.state) locState = parsed.state;
+      } catch (e) {
+        const cityM = String(location).match(/city[:=]\s*([^,}]+)/i);
+        const distM = String(location).match(/district[:=]\s*([^,}]+)/i);
+        const pinM = String(location).match(/pinCode[:=]\s*([^,}]+)/i);
+        const stateM = String(location).match(/state[:=]\s*([^,}]+)/i);
+
+        if (cityM) locCity = cityM[1].trim();
+        if (distM) locDistrict = distM[1].trim();
+        if (pinM) locPinCode = pinM[1].trim();
+        if (stateM) locState = stateM[1].trim();
+
+        if (!cityM && !distM && !pinM && !stateM && String(location).trim()) {
+          rawSearchTerm = String(location).trim();
+        }
+      }
+    }
+  }
+
+  const conditions = [];
+
+  if (locCity) conditions.push({ 'serviceLocation.city': new RegExp(String(locCity).trim(), 'i') });
+  if (locDistrict) conditions.push({ 'serviceLocation.district': new RegExp(String(locDistrict).trim(), 'i') });
+  if (locPinCode) conditions.push({ 'serviceLocation.pinCode': new RegExp(String(locPinCode).trim(), 'i') });
+  if (locState) conditions.push({ 'serviceLocation.state': new RegExp(String(locState).trim(), 'i') });
+
+  if (rawSearchTerm) {
+    const reg = new RegExp(String(rawSearchTerm).trim(), 'i');
+    conditions.push(
+      { 'serviceLocation.city': reg },
+      { 'serviceLocation.district': reg },
+      { 'serviceLocation.pinCode': reg },
+      { 'serviceLocation.state': reg }
+    );
+  }
+
+  if (conditions.length === 0) return {};
+
+  return {
+    $or: [...conditions, { 'serviceLocation.city': 'All' }]
+  };
+};
+
 // ==========================================
 // PUBLIC VENDOR ORDERS & ASSIGNED PHONE LOOKUP
 // ==========================================
 
 export const getPublicVendorOrders = async (req, res) => {
   try {
-    const { profession, serviceName, city, state, location } = req.query;
-
+    const { profession, serviceName } = req.query;
     const targetProfession = profession || serviceName;
-    let targetCity = city;
-    let targetState = state;
 
-    if (location) {
-      try {
-        let parsed = typeof location === 'string' ? JSON.parse(location) : location;
-        if (parsed.city) targetCity = parsed.city;
-        if (parsed.state) targetState = parsed.state;
-      } catch (e) {
-        const cityMatch = String(location).match(/city[:=]\s*([^,}]+)/i);
-        const stateMatch = String(location).match(/state[:=]\s*([^,}]+)/i);
-        if (cityMatch) targetCity = cityMatch[1].trim();
-        if (stateMatch) targetState = stateMatch[1].trim();
-      }
-    }
+    const locationFilter = buildAdminLocationFilter(req.query);
 
-    // Strictly query VendorAdmin accounts (excluding SuperAdmin)
+    // Strictly query VendorAdmin accounts offering targetProfession matching any location criteria
     const matchingAdmins = await Admin.find({
       role: 'VendorAdmin',
       'vendorProfile.isVendorActive': true,
@@ -37,12 +88,7 @@ export const getPublicVendorOrders = async (req, res) => {
           { assignedServices: new RegExp(targetProfession, 'i') }
         ]
       } : {}),
-      ...(targetCity ? {
-        $or: [
-          { 'serviceLocation.city': new RegExp(targetCity, 'i') },
-          { 'serviceLocation.city': 'All' }
-        ]
-      } : {})
+      ...locationFilter
     }).select('-password');
 
     // Find existing vendor orders/requests
@@ -52,9 +98,6 @@ export const getPublicVendorOrders = async (req, res) => {
         { profession: new RegExp(targetProfession, 'i') },
         { serviceName: new RegExp(targetProfession, 'i') }
       ];
-    }
-    if (targetCity) {
-      orderFilter['locationDetails.city'] = new RegExp(targetCity, 'i');
     }
 
     const publicOrders = await Vendor.find(orderFilter)
@@ -105,7 +148,6 @@ export const getVendorDropdownOptions = async (req, res) => {
   try {
     const services = await VendorService.find({ isActive: true });
 
-    // Only fetch locations covered by VendorAdmins
     const vendorAdmins = await Admin.find({
       role: 'VendorAdmin'
     }).select('serviceLocation');
@@ -113,8 +155,11 @@ export const getVendorDropdownOptions = async (req, res) => {
     const locationsMap = new Map();
     vendorAdmins.forEach((v) => {
       if (v.serviceLocation?.city && v.serviceLocation.city !== 'All') {
-        locationsMap.set(v.serviceLocation.city, {
-          city: v.serviceLocation.city,
+        const key = `${v.serviceLocation.city}-${v.serviceLocation.district || ''}-${v.serviceLocation.pinCode || ''}-${v.serviceLocation.state || ''}`;
+        locationsMap.set(key, {
+          city: v.serviceLocation.city || '',
+          district: v.serviceLocation.district || '',
+          pinCode: v.serviceLocation.pinCode || '',
           state: v.serviceLocation.state || ''
         });
       }
@@ -144,7 +189,6 @@ export const getVendorDropdownOptions = async (req, res) => {
 
 // ==========================================
 // 1. SUPERADMIN MASTER CATALOG CONTROLLERS
-//    (SuperAdmin ONLY creates/edits master services)
 // ==========================================
 
 export const createMasterService = async (req, res) => {
@@ -204,7 +248,6 @@ export const deleteMasterService = async (req, res) => {
 
 // ==========================================
 // 2. VENDOR ADMIN PROFILE & SERVICE SELECTION
-//    (VendorAdmin chooses which master services to deliver)
 // ==========================================
 
 export const updateVendorOfferedServices = async (req, res) => {
@@ -227,8 +270,11 @@ export const updateVendorOfferedServices = async (req, res) => {
 
     if (serviceLocation) {
       admin.serviceLocation = {
-        ...admin.serviceLocation,
-        ...serviceLocation
+        city: serviceLocation.city ? serviceLocation.city.trim() : admin.serviceLocation.city,
+        district: serviceLocation.district ? serviceLocation.district.trim() : admin.serviceLocation.district,
+        pinCode: serviceLocation.pinCode ? serviceLocation.pinCode.trim() : admin.serviceLocation.pinCode,
+        state: serviceLocation.state ? serviceLocation.state.trim() : admin.serviceLocation.state,
+        serviceRadiusKm: serviceLocation.serviceRadiusKm || admin.serviceLocation.serviceRadiusKm
       };
     }
 
@@ -251,7 +297,7 @@ export const updateVendorOfferedServices = async (req, res) => {
 };
 
 // ==========================================
-// 3. USER FLOW: LOCATION -> SERVICES -> VENDOR PROFILES
+// 3. USER FLOW: SEARCH LOCATION -> SERVICES -> PROFILES
 // ==========================================
 
 export const getAvailableLocations = async (req, res) => {
@@ -261,13 +307,20 @@ export const getAvailableLocations = async (req, res) => {
       'vendorProfile.isVendorActive': true
     }).select('serviceLocation');
 
-    const locations = Array.from(
-      new Set(
-        vendorAdmins
-          .map((v) => v.serviceLocation?.city)
-          .filter((city) => city && city !== 'All')
-      )
-    );
+    const locationsMap = new Map();
+    vendorAdmins.forEach((v) => {
+      if (v.serviceLocation?.city && v.serviceLocation.city !== 'All') {
+        const key = `${v.serviceLocation.city}-${v.serviceLocation.district || ''}-${v.serviceLocation.pinCode || ''}-${v.serviceLocation.state || ''}`;
+        locationsMap.set(key, {
+          city: v.serviceLocation.city || '',
+          district: v.serviceLocation.district || '',
+          pinCode: v.serviceLocation.pinCode || '',
+          state: v.serviceLocation.state || ''
+        });
+      }
+    });
+
+    const locations = Array.from(locationsMap.values());
 
     res.json({ success: true, count: locations.length, data: locations });
   } catch (error) {
@@ -277,21 +330,13 @@ export const getAvailableLocations = async (req, res) => {
 
 export const getAvailableServicesByLocation = async (req, res) => {
   try {
-    const { city, state } = req.query;
+    const locationFilter = buildAdminLocationFilter(req.query);
 
-    const filter = {
+    const vendorAdmins = await Admin.find({
       role: 'VendorAdmin',
-      'vendorProfile.isVendorActive': true
-    };
-
-    if (city) {
-      filter.$or = [
-        { 'serviceLocation.city': new RegExp(city, 'i') },
-        { 'serviceLocation.city': 'All' }
-      ];
-    }
-
-    const vendorAdmins = await Admin.find(filter).select('vendorProfile.offeredServices');
+      'vendorProfile.isVendorActive': true,
+      ...locationFilter
+    }).select('vendorProfile.offeredServices');
 
     const serviceNamesSet = new Set();
     vendorAdmins.forEach((admin) => {
@@ -309,7 +354,6 @@ export const getAvailableServicesByLocation = async (req, res) => {
 
     res.json({
       success: true,
-      city: city || 'All',
       count: services.length,
       data: services
     });
@@ -320,31 +364,24 @@ export const getAvailableServicesByLocation = async (req, res) => {
 
 export const getVendorAdminProfiles = async (req, res) => {
   try {
-    const { city, serviceName } = req.query;
+    const { serviceName } = req.query;
 
     if (!serviceName) {
       return res.status(400).json({ success: false, message: 'serviceName parameter is required' });
     }
 
-    const filter = {
+    const locationFilter = buildAdminLocationFilter(req.query);
+
+    const vendorAdmins = await Admin.find({
       role: 'VendorAdmin',
       'vendorProfile.isVendorActive': true,
-      'vendorProfile.offeredServices': serviceName
-    };
-
-    if (city) {
-      filter.$or = [
-        { 'serviceLocation.city': new RegExp(city, 'i') },
-        { 'serviceLocation.city': 'All' }
-      ];
-    }
-
-    const vendorAdmins = await Admin.find(filter).select('-password');
+      'vendorProfile.offeredServices': new RegExp(serviceName, 'i'),
+      ...locationFilter
+    }).select('-password');
 
     res.json({
       success: true,
       serviceName,
-      city: city || 'All',
       count: vendorAdmins.length,
       data: vendorAdmins.map((v) => ({
         vendorAdminId: v._id,
@@ -371,8 +408,8 @@ export const createVendorBooking = async (req, res) => {
       phone: phone || req.user.phone,
       serviceName,
       profession: serviceName,
-      location,
-      locationDetails,
+      location: typeof location === 'string' ? location : (locationDetails?.city || 'Location'),
+      locationDetails: locationDetails || { city: '', district: '', pinCode: '', state: '' },
       description,
       assignedVendorId: vendorAdminId || null,
       status: 'pending',
@@ -438,10 +475,11 @@ export const updateVendorStatus = async (req, res) => {
 
 export const getAllVendorAdmin = async (req, res) => {
   try {
-    const { status, city } = req.query;
-    const filter = {};
+    const { status } = req.query;
+    const locationFilter = buildAdminLocationFilter(req.query);
+
+    const filter = { ...locationFilter };
     if (status) filter.status = status;
-    if (city) filter['locationDetails.city'] = city;
 
     const requests = await Vendor.find(filter)
       .populate('userId', 'name phone email')

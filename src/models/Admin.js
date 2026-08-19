@@ -13,15 +13,16 @@ const adminSchema = new mongoose.Schema(
       default: 'RideAdmin'
     },
     serviceLocation: {
-      city: { type: String, default: 'All' },
-      state: { type: String, default: 'All' },
-      district: { type: String, default: 'All' },
+      city: { type: String, trim: true, default: 'All' },
+      district: { type: String, trim: true, default: 'All' },
+      pinCode: { type: String, trim: true, default: '' },
+      state: { type: String, trim: true, default: 'All' },
       serviceRadiusKm: { type: Number, default: 100 }
     },
     assignedServices: [{ type: String }],
     vendorProfile: {
       isVendorActive: { type: Boolean, default: true },
-      offeredServices: [{ type: String }], // Services chosen by VendorAdmin to deliver
+      offeredServices: [{ type: String }],
       pricingEstimate: { type: String, default: 'Contact for Quote' },
       rating: { type: Number, default: 5.0 },
       completedJobs: { type: Number, default: 0 },

@@ -8,9 +8,10 @@ const vendorSchema = new mongoose.Schema(
     profession: { type: String, default: 'Breakdown Specialist' },
     location: { type: String, required: true },
     locationDetails: {
-      city: { type: String, required: true },
-      state: { type: String, required: true },
-      district: { type: String }
+      city: { type: String, trim: true },
+      district: { type: String, trim: true },
+      pinCode: { type: String, trim: true },
+      state: { type: String, trim: true }
     },
     description: { type: String, required: true },
     status: {
