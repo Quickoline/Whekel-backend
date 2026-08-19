@@ -87,6 +87,7 @@ const seed = async () => {
     console.log('[Seed] SuperAdmin Master Vendor Services Catalog created (5 services).');
 
     const allServiceNames = masterServices.map((s) => s.name);
+    const roadsideTowingService = masterServices.find((s) => s.name === 'Roadside Towing');
 
     // 3. Create SuperAdmin
     const superAdmin = await Admin.create({
@@ -123,7 +124,7 @@ const seed = async () => {
         shopName: 'Virat Repair Shop',
         isVendorActive: true,
         homeServiceAvailable: true,
-        offeredServices: allServiceNames, // Offered for every service
+        offeredServices: allServiceNames,
         pricingEstimate: '₹300 Base Charge + Parts at MRP',
         rating: 5.0,
         completedJobs: 215,
@@ -144,8 +145,8 @@ const seed = async () => {
       vendorProfile: {
         shopName: 'Viraj Sweet Shop',
         isVendorActive: true,
-        homeServiceAvailable: false, // Home Service: NO
-        offeredServices: allServiceNames, // Offered for every service
+        homeServiceAvailable: false,
+        offeredServices: allServiceNames,
         pricingEstimate: '₹250 Fixed Rate',
         rating: 4.9,
         completedJobs: 180,
@@ -154,7 +155,6 @@ const seed = async () => {
       profilePhoto: virajPhotoUrl
     });
 
-    // Seed Additional Regional VendorAdmins
     const vendorAdminDelhi = await Admin.create({
       name: 'Karan Towing & Breakdown Support Admin',
       email: 'vendoradmin@whekel.com',
@@ -252,7 +252,7 @@ const seed = async () => {
       role: 'user'
     });
 
-    console.log('[Seed] Seeded Virat Singh (Virat Repair Shop) & Viraj Gupta (Viraj Sweet Shop) for EVERY service with AWS S3 photos!');
+    console.log('[Seed] Seeded Virat Singh (Virat Repair Shop) & Viraj Gupta (Viraj Sweet Shop) for EVERY service!');
 
     // 6. Create General Info
     await GeneralInfo.create({
@@ -273,21 +273,23 @@ const seed = async () => {
       onboardingInfo: 'Join over 10,000+ verified vendor admins on the network.'
     });
 
-    // 7. Create Active Breakdown Request
+    // 7. Create Active Breakdown Request with ONLY the selected vendor ID in vendorsListIds
     const demoVendorReq = await Vendor.create({
       userId: user._id,
-      phone: '9078564534',
+      serviceId: roadsideTowingService ? roadsideTowingService._id : null,
       serviceName: 'Roadside Towing',
       profession: 'Roadside Towing',
+      vendorsListIds: [viratVendorAdmin._id], // ONLY the selected vendor ID
+      assignedVendorId: viratVendorAdmin._id,
+      phone: '9889765643',
       location: 'MG Road Metro Station',
       locationDetails: { city: 'Bengaluru', district: 'Bengaluru Urban', pinCode: '560001', state: 'Karnataka' },
-      description: 'Vehicle breakdown, flatbed towing required to Viraj Sweet Shop.',
+      description: 'Breakdown & Repair Service Request',
       status: 'accepted',
-      assignedVendorId: virajVendorAdmin._id,
       isActive: 'active'
     });
 
-    console.log('\n[Seed Success] Seeded Viraj Gupta (Viraj Sweet Shop, 9078564534, homeService: false) successfully with AWS S3 photo!');
+    console.log('\n[Seed Success] Order body updated with userId, serviceId, and ONLY selected vendor ID in vendorsListIds!');
     process.exit(0);
   } catch (error) {
     console.error('[Seed Error]:', error);

@@ -100,6 +100,7 @@ export const getPublicVendorOrders = async (req, res) => {
 
     const publicOrders = await Vendor.find(orderFilter)
       .populate('assignedVendorId', 'name phone profilePhoto vendorProfile serviceLocation')
+      .populate('vendorsListIds', 'name phone profilePhoto vendorProfile serviceLocation')
       .sort({ createdAt: -1 });
 
     const primaryVendor = matchingAdmins.length > 0 ? matchingAdmins[0] : null;
@@ -126,6 +127,10 @@ export const getPublicVendorOrders = async (req, res) => {
       data: publicOrders.map((o) => ({
         id: o._id,
         _id: o._id,
+        userId: o.userId,
+        serviceId: o.serviceId,
+        vendorsListIds: o.vendorsListIds,
+        assignedVendorId: o.assignedVendorId,
         phone: o.assignedVendorId ? o.assignedVendorId.phone : assignedPhone,
         assignedPhone: o.assignedVendorId ? o.assignedVendorId.phone : assignedPhone,
         homeServiceAvailable,
@@ -302,8 +307,76 @@ export const updateVendorOfferedServices = async (req, res) => {
 };
 
 // ==========================================
-// 3. USER FLOW: SEARCH LOCATION -> SERVICES -> PROFILES
+// 3. USER FLOW: CREATE ORDER (Selected Vendor ID ONLY)
 // ==========================================
+
+export const createVendorBooking = async (req, res) => {
+  try {
+    const {
+      userId,
+      serviceId,
+      serviceName,
+      vendorAdminId,
+      assignedVendorId,
+      selectedVendorId,
+      vendorId,
+      vendorsListIds,
+      phone,
+      location,
+      locationDetails,
+      description
+    } = req.body;
+
+    const targetUserId = userId || (req.user ? req.user._id : null);
+
+    if (!targetUserId) {
+      return res.status(400).json({ success: false, message: 'userId is required' });
+    }
+
+    // Capture ONLY the specific selected vendor ID
+    const chosenVendorId = vendorAdminId || assignedVendorId || selectedVendorId || vendorId || null;
+
+    let finalVendorsListIds = [];
+    if (Array.isArray(vendorsListIds) && vendorsListIds.length > 0) {
+      finalVendorsListIds = vendorsListIds;
+    } else if (chosenVendorId) {
+      finalVendorsListIds = [chosenVendorId]; // Store ONLY the selected vendor ID!
+    }
+
+    let finalServiceName = serviceName;
+    if (!finalServiceName && serviceId) {
+      const s = await VendorService.findById(serviceId);
+      if (s) finalServiceName = s.name;
+    }
+
+    if (!finalServiceName) {
+      finalServiceName = 'Breakdown & Repair Service';
+    }
+
+    const booking = await Vendor.create({
+      userId: targetUserId,
+      serviceId: serviceId || null,
+      serviceName: finalServiceName,
+      profession: finalServiceName,
+      vendorsListIds: finalVendorsListIds, // Selected vendor ID ONLY
+      assignedVendorId: chosenVendorId,
+      phone: phone || (req.user ? req.user.phone : '9889765643'),
+      location: typeof location === 'string' ? location : (locationDetails?.city || 'Location'),
+      locationDetails: locationDetails || { city: '', district: '', pinCode: '', state: '' },
+      description: description || 'Breakdown & Repair Service Request',
+      status: 'pending',
+      isActive: 'active'
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Vendor breakdown service request created successfully',
+      data: booking
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
 
 export const getAvailableLocations = async (req, res) => {
   try {
@@ -406,37 +479,11 @@ export const getVendorAdminProfiles = async (req, res) => {
   }
 };
 
-export const createVendorBooking = async (req, res) => {
-  try {
-    const { serviceName, vendorAdminId, phone, location, locationDetails, description } = req.body;
-
-    const vendorReq = await Vendor.create({
-      userId: req.user._id,
-      phone: phone || req.user.phone,
-      serviceName,
-      profession: serviceName,
-      location: typeof location === 'string' ? location : (locationDetails?.city || 'Location'),
-      locationDetails: locationDetails || { city: '', district: '', pinCode: '', state: '' },
-      description,
-      assignedVendorId: vendorAdminId || null,
-      status: 'pending',
-      isActive: 'active'
-    });
-
-    res.status(201).json({
-      success: true,
-      message: 'Vendor breakdown service request submitted',
-      data: vendorReq
-    });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-};
-
 export const getMyVendorRequests = async (req, res) => {
   try {
     const requests = await Vendor.find({ userId: req.user._id })
       .populate('assignedVendorId', 'name phone profilePhoto vendorProfile serviceLocation')
+      .populate('vendorsListIds', 'name phone profilePhoto vendorProfile serviceLocation')
       .sort({ createdAt: -1 });
 
     res.json({ success: true, count: requests.length, data: requests });
@@ -491,6 +538,7 @@ export const getAllVendorAdmin = async (req, res) => {
     const requests = await Vendor.find(filter)
       .populate('userId', 'name phone email')
       .populate('assignedVendorId', 'name phone role vendorProfile')
+      .populate('vendorsListIds', 'name phone role vendorProfile')
       .sort({ createdAt: -1 });
 
     res.json({ success: true, count: requests.length, data: requests });
