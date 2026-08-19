@@ -36,7 +36,7 @@ const seed = async () => {
 
     console.log('[Seed] Cleared old collections...');
 
-    // 1. Create SuperAdmin Master Vendor Services Catalog
+    // 1. Create SuperAdmin Master Vendor Services Catalog (5 Core Breakdown Services)
     const masterServices = await VendorService.create([
       {
         name: 'Roadside Towing',
@@ -72,7 +72,10 @@ const seed = async () => {
 
     console.log('[Seed] SuperAdmin Master Vendor Services Catalog created (5 services).');
 
-    // 2. Create All Admin Roles with Location & Selected Vendor Services
+    // All Master Service Names List for full coverage assignment
+    const allServiceNames = masterServices.map((s) => s.name);
+
+    // 2. Create Vendor Admins for All Cities with Chosen Offered Services
     const superAdmin = await Admin.create({
       name: 'Whekel Global SuperAdmin',
       email: 'superadmin@whekel.com',
@@ -83,7 +86,7 @@ const seed = async () => {
       assignedServices: ['Ride', 'Parcel', 'Freight', 'Vendor', 'All'],
       vendorProfile: {
         isVendorActive: true,
-        offeredServices: ['Roadside Towing', 'Battery Jumpstart', 'Vehicle Mechanic Repair'],
+        offeredServices: allServiceNames,
         pricingEstimate: '₹500 - ₹2,500 based on service distance',
         rating: 4.9,
         completedJobs: 142,
@@ -99,7 +102,7 @@ const seed = async () => {
       password: 'password123',
       role: 'VendorAdmin',
       serviceLocation: { city: 'Delhi NCR', state: 'Delhi', district: 'New Delhi', serviceRadiusKm: 60 },
-      assignedServices: ['Roadside Towing', 'Battery Jumpstart', 'Flat Tire Replacement', 'Emergency Fuel Delivery'],
+      assignedServices: allServiceNames,
       vendorProfile: {
         isVendorActive: true,
         offeredServices: ['Roadside Towing', 'Battery Jumpstart', 'Flat Tire Replacement', 'Emergency Fuel Delivery'],
@@ -118,16 +121,35 @@ const seed = async () => {
       password: 'password123',
       role: 'VendorAdmin',
       serviceLocation: { city: 'Bengaluru', state: 'Karnataka', district: 'Bengaluru Urban', serviceRadiusKm: 50 },
-      assignedServices: ['Vehicle Mechanic Repair', 'Battery Jumpstart', 'Flat Tire Replacement'],
+      assignedServices: allServiceNames,
       vendorProfile: {
         isVendorActive: true,
-        offeredServices: ['Vehicle Mechanic Repair', 'Battery Jumpstart', 'Flat Tire Replacement'],
+        offeredServices: ['Vehicle Mechanic Repair', 'Battery Jumpstart', 'Flat Tire Replacement', 'Roadside Towing'],
         pricingEstimate: '₹350 Inspection + Parts extra',
         rating: 5.0,
         completedJobs: 114,
-        bio: 'Expert Mobile Auto Mechanics for Tech Parks & Highways'
+        bio: 'Expert Mobile Auto Mechanics for Tech Parks & Highways in Bengaluru'
       },
       profilePhoto: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d'
+    });
+
+    const vendorAdminMumbai = await Admin.create({
+      name: 'Mumbai Marine Drive Breakdown Services',
+      email: 'vendormumbai@whekel.com',
+      phone: '9876543277',
+      password: 'password123',
+      role: 'VendorAdmin',
+      serviceLocation: { city: 'Mumbai', state: 'Maharashtra', district: 'Mumbai City', serviceRadiusKm: 65 },
+      assignedServices: allServiceNames,
+      vendorProfile: {
+        isVendorActive: true,
+        offeredServices: allServiceNames, // Offers all 5 seeded services
+        pricingEstimate: '₹450 Base Charge',
+        rating: 4.7,
+        completedJobs: 76,
+        bio: 'Citywide Emergency Breakdown & Towing Team in Mumbai'
+      },
+      profilePhoto: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2'
     });
 
     const rideAdmin = await Admin.create({
@@ -185,7 +207,7 @@ const seed = async () => {
       role: 'user'
     });
 
-    console.log('[Seed] Vendor Admins created with chosen offered services and location coverage.');
+    console.log('[Seed] All Vendor Admins created with explicit offeredServices arrays matching Master Services!');
 
     // 3. Create General Info
     await GeneralInfo.create({
