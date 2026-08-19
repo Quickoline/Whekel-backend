@@ -27,9 +27,9 @@ export const getPublicVendorOrders = async (req, res) => {
       }
     }
 
-    // Find matching Vendor Admins operating in this location offering targetProfession
+    // Strictly query VendorAdmin accounts (excluding SuperAdmin)
     const matchingAdmins = await Admin.find({
-      role: { $in: ['VendorAdmin', 'SuperAdmin'] },
+      role: 'VendorAdmin',
       'vendorProfile.isVendorActive': true,
       ...(targetProfession ? {
         $or: [
@@ -98,15 +98,16 @@ export const getPublicVendorOrders = async (req, res) => {
 };
 
 // ==========================================
-// DROPDOWN OPTIONS FOR FRONTEND ADMIN & USER
+// DROPDOWN OPTIONS FOR FRONTEND APP & ADMIN
 // ==========================================
 
 export const getVendorDropdownOptions = async (req, res) => {
   try {
     const services = await VendorService.find({ isActive: true });
 
+    // Only fetch locations covered by VendorAdmins
     const vendorAdmins = await Admin.find({
-      role: { $in: ['VendorAdmin', 'SuperAdmin'] }
+      role: 'VendorAdmin'
     }).select('serviceLocation');
 
     const locationsMap = new Map();
@@ -143,6 +144,7 @@ export const getVendorDropdownOptions = async (req, res) => {
 
 // ==========================================
 // 1. SUPERADMIN MASTER CATALOG CONTROLLERS
+//    (SuperAdmin ONLY creates/edits master services)
 // ==========================================
 
 export const createMasterService = async (req, res) => {
@@ -161,7 +163,7 @@ export const createMasterService = async (req, res) => {
       description
     });
 
-    res.status(201).json({ success: true, message: 'Master vendor service created', data: service });
+    res.status(201).json({ success: true, message: 'Master vendor service created by SuperAdmin', data: service });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -202,6 +204,7 @@ export const deleteMasterService = async (req, res) => {
 
 // ==========================================
 // 2. VENDOR ADMIN PROFILE & SERVICE SELECTION
+//    (VendorAdmin chooses which master services to deliver)
 // ==========================================
 
 export const updateVendorOfferedServices = async (req, res) => {
@@ -211,6 +214,10 @@ export const updateVendorOfferedServices = async (req, res) => {
     const admin = await Admin.findById(req.user._id);
     if (!admin) {
       return res.status(404).json({ success: false, message: 'Admin account not found' });
+    }
+
+    if (admin.role !== 'VendorAdmin') {
+      return res.status(403).json({ success: false, message: 'Only VendorAdmin accounts can choose services to deliver' });
     }
 
     if (offeredServices) admin.vendorProfile.offeredServices = offeredServices;
@@ -229,7 +236,7 @@ export const updateVendorOfferedServices = async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Vendor services & location settings updated successfully',
+      message: 'VendorAdmin offered services & location settings updated successfully',
       data: {
         id: updatedAdmin._id,
         name: updatedAdmin.name,
@@ -250,7 +257,7 @@ export const updateVendorOfferedServices = async (req, res) => {
 export const getAvailableLocations = async (req, res) => {
   try {
     const vendorAdmins = await Admin.find({
-      role: { $in: ['VendorAdmin', 'SuperAdmin'] },
+      role: 'VendorAdmin',
       'vendorProfile.isVendorActive': true
     }).select('serviceLocation');
 
@@ -273,7 +280,7 @@ export const getAvailableServicesByLocation = async (req, res) => {
     const { city, state } = req.query;
 
     const filter = {
-      role: { $in: ['VendorAdmin', 'SuperAdmin'] },
+      role: 'VendorAdmin',
       'vendorProfile.isVendorActive': true
     };
 
@@ -320,7 +327,7 @@ export const getVendorAdminProfiles = async (req, res) => {
     }
 
     const filter = {
-      role: { $in: ['VendorAdmin', 'SuperAdmin'] },
+      role: 'VendorAdmin',
       'vendorProfile.isVendorActive': true,
       'vendorProfile.offeredServices': serviceName
     };

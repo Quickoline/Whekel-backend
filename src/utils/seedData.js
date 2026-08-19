@@ -36,7 +36,7 @@ const seed = async () => {
 
     console.log('[Seed] Cleared old collections...');
 
-    // 1. Create SuperAdmin Master Vendor Services Catalog (5 Core Breakdown Services)
+    // 1. SuperAdmin ONLY creates Master Vendor Services Catalog (5 Breakdown Services)
     const masterServices = await VendorService.create([
       {
         name: 'Roadside Towing',
@@ -72,10 +72,9 @@ const seed = async () => {
 
     console.log('[Seed] SuperAdmin Master Vendor Services Catalog created (5 services).');
 
-    // All Master Service Names List for full coverage assignment
     const allServiceNames = masterServices.map((s) => s.name);
 
-    // 2. Create Vendor Admins for All Cities with Chosen Offered Services
+    // 2. Create SuperAdmin (ONLY creates services, does NOT offer vendor delivery)
     const superAdmin = await Admin.create({
       name: 'Whekel Global SuperAdmin',
       email: 'superadmin@whekel.com',
@@ -85,16 +84,17 @@ const seed = async () => {
       serviceLocation: { city: 'All', state: 'All', district: 'All', serviceRadiusKm: 10000 },
       assignedServices: ['Ride', 'Parcel', 'Freight', 'Vendor', 'All'],
       vendorProfile: {
-        isVendorActive: true,
-        offeredServices: allServiceNames,
-        pricingEstimate: '₹500 - ₹2,500 based on service distance',
-        rating: 4.9,
-        completedJobs: 142,
-        bio: 'Official Whekel Master Mobility Support Vendor Team'
+        isVendorActive: false,
+        offeredServices: [],
+        pricingEstimate: 'N/A',
+        rating: 5.0,
+        completedJobs: 0,
+        bio: 'SuperAdmin System Creator'
       },
       profilePhoto: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb'
     });
 
+    // 3. Create VendorAdmins (They CHOOSE which master services to deliver in their city)
     const vendorAdminDelhi = await Admin.create({
       name: 'Karan Towing & Breakdown Support Admin',
       email: 'vendoradmin@whekel.com',
@@ -124,7 +124,7 @@ const seed = async () => {
       assignedServices: allServiceNames,
       vendorProfile: {
         isVendorActive: true,
-        offeredServices: ['Vehicle Mechanic Repair', 'Battery Jumpstart', 'Flat Tire Replacement', 'Roadside Towing'],
+        offeredServices: ['Vehicle Mechanic Repair', 'Battery Jumpstart', 'Flat Tire Replacement', 'Roadside Towing', 'Emergency Fuel Delivery'],
         pricingEstimate: '₹350 Inspection + Parts extra',
         rating: 5.0,
         completedJobs: 114,
@@ -143,7 +143,7 @@ const seed = async () => {
       assignedServices: allServiceNames,
       vendorProfile: {
         isVendorActive: true,
-        offeredServices: allServiceNames, // Offers all 5 seeded services
+        offeredServices: allServiceNames,
         pricingEstimate: '₹450 Base Charge',
         rating: 4.7,
         completedJobs: 76,
@@ -207,9 +207,9 @@ const seed = async () => {
       role: 'user'
     });
 
-    console.log('[Seed] All Vendor Admins created with explicit offeredServices arrays matching Master Services!');
+    console.log('[Seed] SuperAdmin created master catalog. VendorAdmins created with their chosen offeredServices!');
 
-    // 3. Create General Info
+    // 4. Create General Info
     await GeneralInfo.create({
       title: 'Whekel Mobility',
       tagline: 'All In One Transport App',
@@ -228,23 +228,6 @@ const seed = async () => {
       onboardingInfo: 'Join over 10,000+ verified vendor admins on the network.'
     });
 
-    console.log('[Seed] General Info populated.');
-
-    // 4. Create Ride
-    const demoRide = await Ride.create({
-      userId: user._id,
-      adminId: rideAdmin._id,
-      vehicleType: 'bus',
-      vehicleName: 'Camry Express Coach',
-      pickup: '123 Main St, Bengaluru',
-      drop: '456 Oak Ave, Chennai',
-      stops: [
-        { name: 'Hosur Toll Plaza', address: 'NH 44, Hosur', lat: 12.7409, lng: 77.8253 }
-      ],
-      fare: 450,
-      status: 'accepted'
-    });
-
     // 5. Create Vendor Request (Linking Location -> Selected Service -> VendorAdmin Profile)
     const demoVendorReq = await Vendor.create({
       userId: user._id,
@@ -259,9 +242,7 @@ const seed = async () => {
       isActive: 'active'
     });
 
-    console.log('[Seed] Vendor breakdown service request created linking selected service and vendor admin!');
-
-    console.log('\n[Seed Success] Vendor system with Master Catalog, Vendor Admin offered services, and Location Filtering seeded successfully!');
+    console.log('\n[Seed Success] Vendor system role separation updated successfully!');
     process.exit(0);
   } catch (error) {
     console.error('[Seed Error]:', error);
