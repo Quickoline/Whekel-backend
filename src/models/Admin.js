@@ -19,6 +19,14 @@ const adminSchema = new mongoose.Schema(
       serviceRadiusKm: { type: Number, default: 100 }
     },
     assignedServices: [{ type: String }],
+    vendorProfile: {
+      isVendorActive: { type: Boolean, default: true },
+      offeredServices: [{ type: String }], // Services chosen by VendorAdmin to deliver
+      pricingEstimate: { type: String, default: 'Contact for Quote' },
+      rating: { type: Number, default: 5.0 },
+      completedJobs: { type: Number, default: 0 },
+      bio: { type: String, default: 'Verified Professional Mobility Vendor' }
+    },
     fcmToken: { type: String, default: '' },
     profilePhoto: { type: String, default: '' }
   },

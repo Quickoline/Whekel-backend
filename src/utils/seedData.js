@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import UserAuth from '../models/UserAuth.js';
 import Admin from '../models/Admin.js';
+import VendorService from '../models/VendorService.js';
 import GeneralInfo from '../models/GeneralInfo.js';
 import Ride from '../models/Ride.js';
 import Parcel from '../models/Parcel.js';
@@ -19,9 +20,10 @@ const seed = async () => {
     await mongoose.connect(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/whekel_db');
     console.log('[Seed] Connected to MongoDB database...');
 
-    // Clear existing data
+    // Clear existing collections
     await UserAuth.deleteMany({});
     await Admin.deleteMany({});
+    await VendorService.deleteMany({});
     await GeneralInfo.deleteMany({});
     await Ride.deleteMany({});
     await Parcel.deleteMany({});
@@ -34,7 +36,43 @@ const seed = async () => {
 
     console.log('[Seed] Cleared old collections...');
 
-    // 1. Create All Admin Roles with Location & Service Authority
+    // 1. Create SuperAdmin Master Vendor Services Catalog
+    const masterServices = await VendorService.create([
+      {
+        name: 'Roadside Towing',
+        category: 'Emergency Breakdown',
+        icon: 'tow_truck',
+        description: 'Flatbed and wheel-lift towing for cars, SUVs, and commercial vehicles.'
+      },
+      {
+        name: 'Battery Jumpstart',
+        category: 'Quick Support',
+        icon: 'battery_charging_full',
+        description: 'On-demand 12V battery jumpstart and voltage diagnostics.'
+      },
+      {
+        name: 'Vehicle Mechanic Repair',
+        category: 'On-site Repair',
+        icon: 'build',
+        description: 'Mobile auto mechanics for engine, brake, and transmission troubleshooting.'
+      },
+      {
+        name: 'Flat Tire Replacement',
+        category: 'Wheel Support',
+        icon: 'tire_repair',
+        description: 'Stepney tire replacement and tubeless puncture repairing at your location.'
+      },
+      {
+        name: 'Emergency Fuel Delivery',
+        category: 'Fuel Support',
+        icon: 'local_gas_station',
+        description: 'Emergency petrol or diesel delivery directly to your stranded vehicle.'
+      }
+    ]);
+
+    console.log('[Seed] SuperAdmin Master Vendor Services Catalog created (5 services).');
+
+    // 2. Create All Admin Roles with Location & Selected Vendor Services
     const superAdmin = await Admin.create({
       name: 'Whekel Global SuperAdmin',
       email: 'superadmin@whekel.com',
@@ -43,7 +81,53 @@ const seed = async () => {
       role: 'SuperAdmin',
       serviceLocation: { city: 'All', state: 'All', district: 'All', serviceRadiusKm: 10000 },
       assignedServices: ['Ride', 'Parcel', 'Freight', 'Vendor', 'All'],
+      vendorProfile: {
+        isVendorActive: true,
+        offeredServices: ['Roadside Towing', 'Battery Jumpstart', 'Vehicle Mechanic Repair'],
+        pricingEstimate: '₹500 - ₹2,500 based on service distance',
+        rating: 4.9,
+        completedJobs: 142,
+        bio: 'Official Whekel Master Mobility Support Vendor Team'
+      },
       profilePhoto: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb'
+    });
+
+    const vendorAdminDelhi = await Admin.create({
+      name: 'Karan Towing & Breakdown Support Admin',
+      email: 'vendoradmin@whekel.com',
+      phone: '9876543244',
+      password: 'password123',
+      role: 'VendorAdmin',
+      serviceLocation: { city: 'Delhi NCR', state: 'Delhi', district: 'New Delhi', serviceRadiusKm: 60 },
+      assignedServices: ['Roadside Towing', 'Battery Jumpstart', 'Flat Tire Replacement', 'Emergency Fuel Delivery'],
+      vendorProfile: {
+        isVendorActive: true,
+        offeredServices: ['Roadside Towing', 'Battery Jumpstart', 'Flat Tire Replacement', 'Emergency Fuel Delivery'],
+        pricingEstimate: '₹400 Base Rate + ₹20/km',
+        rating: 4.8,
+        completedJobs: 89,
+        bio: '24/7 Rapid Response Towing & Battery Specialist in Delhi NCR'
+      },
+      profilePhoto: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7'
+    });
+
+    const vendorAdminBlr = await Admin.create({
+      name: 'Bengaluru Auto Care & Towing Support',
+      email: 'vendorblr@whekel.com',
+      phone: '9876543266',
+      password: 'password123',
+      role: 'VendorAdmin',
+      serviceLocation: { city: 'Bengaluru', state: 'Karnataka', district: 'Bengaluru Urban', serviceRadiusKm: 50 },
+      assignedServices: ['Vehicle Mechanic Repair', 'Battery Jumpstart', 'Flat Tire Replacement'],
+      vendorProfile: {
+        isVendorActive: true,
+        offeredServices: ['Vehicle Mechanic Repair', 'Battery Jumpstart', 'Flat Tire Replacement'],
+        pricingEstimate: '₹350 Inspection + Parts extra',
+        rating: 5.0,
+        completedJobs: 114,
+        bio: 'Expert Mobile Auto Mechanics for Tech Parks & Highways'
+      },
+      profilePhoto: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d'
     });
 
     const rideAdmin = await Admin.create({
@@ -79,17 +163,6 @@ const seed = async () => {
       profilePhoto: 'https://images.unsplash.com/photo-1560250097-0b93528c311a'
     });
 
-    const vendorAdmin = await Admin.create({
-      name: 'Karan Towing & Breakdown Support Admin',
-      email: 'vendoradmin@whekel.com',
-      phone: '9876543244',
-      password: 'password123',
-      role: 'VendorAdmin',
-      serviceLocation: { city: 'Delhi NCR', state: 'Delhi', district: 'New Delhi', serviceRadiusKm: 60 },
-      assignedServices: ['Roadside Mechanic', 'Towing Truck Support', 'Battery Jumpstart', 'Emergency Repairs'],
-      profilePhoto: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7'
-    });
-
     const localAdmin = await Admin.create({
       name: 'Suresh City Metro Local Transport Admin',
       email: 'localadmin@whekel.com',
@@ -112,31 +185,30 @@ const seed = async () => {
       role: 'user'
     });
 
-    console.log('[Seed] All 6 Admin Roles (SuperAdmin, RideAdmin, ParcelAdmin, FreightAdmin, VendorAdmin, LocalAdmin) & User created with location authority!');
+    console.log('[Seed] Vendor Admins created with chosen offered services and location coverage.');
 
-    // 2. Create General Info
+    // 3. Create General Info
     await GeneralInfo.create({
       title: 'Whekel Mobility',
       tagline: 'All In One Transport App',
       categories: ['Ride', 'Parcel', 'Freight', 'Vendor'],
       steps: [
-        { stepNumber: 1, title: 'Discover', description: 'Explore Ride, Parcel, Freight, and Breakdown Vendor services in one unified platform.' },
-        { stepNumber: 2, title: 'Book & Negotiate', description: 'Direct fare negotiations with verified transit providers.' },
-        { stepNumber: 3, title: 'Pay & Track', description: 'Real-time GPS tracking with transparent wallet settlement.' }
+        { stepNumber: 1, title: 'Discover', description: 'Select your city/location, browse available breakdown services, and choose a verified vendor provider.' },
+        { stepNumber: 2, title: 'Book & Negotiate', description: 'Direct service booking with instant vendor dispatch.' },
+        { stepNumber: 3, title: 'Pay & Track', description: 'Real-time vendor tracking and transparent billing.' }
       ],
       whyChooseUs: [
-        { title: 'Structured Categories', description: 'Comprehensive mobility modes for passengers, courier dispatches, and bulk freight.', icon: 'category' },
-        { title: 'Order Context Threads', description: 'In-app WebRTC audio calls and order-scoped real-time chat messaging.', icon: 'chat' },
-        { title: 'Transparent Wallet History', description: 'Zero hidden fees with instant billing statements.', icon: 'wallet' }
+        { title: 'Location-Based Vendor Search', description: 'Find roadside assistance tailored specifically to your current city.', icon: 'my_location' },
+        { title: 'Verified Vendor Profiles', description: 'Choose from rated vendor admins with transparent pricing and review stats.', icon: 'verified' }
       ],
-      features: ['Multi-Stop Bus Schedules', 'Door-to-Door Parcel Delivery', 'Industrial Heavy Freight Shipping', '24/7 Breakdown Assistance'],
-      howItWorks: ['Choose service module', 'Confirm details and location', 'Track live trip status'],
-      onboardingInfo: 'Join over 10,000+ driver partners and verified vendors across the network.'
+      features: ['Roadside Towing', 'Battery Jumpstart', 'Mobile Car Mechanic', 'Flat Tire Repair', 'Fuel Delivery'],
+      howItWorks: ['Select Location (e.g. Delhi NCR)', 'Pick Service (e.g. Towing)', 'Choose Vendor Admin Profile', 'Track Arrival'],
+      onboardingInfo: 'Join over 10,000+ verified vendor admins on the network.'
     });
 
     console.log('[Seed] General Info populated.');
 
-    // 3. Create Ride (Assigned to RideAdmin)
+    // 4. Create Ride
     const demoRide = await Ride.create({
       userId: user._id,
       adminId: rideAdmin._id,
@@ -145,150 +217,29 @@ const seed = async () => {
       pickup: '123 Main St, Bengaluru',
       drop: '456 Oak Ave, Chennai',
       stops: [
-        { name: 'Hosur Toll Plaza', address: 'NH 44, Hosur', lat: 12.7409, lng: 77.8253 },
-        { name: 'Vellore Bypass', address: 'Vellore Highway', lat: 12.9165, lng: 79.1325 }
+        { name: 'Hosur Toll Plaza', address: 'NH 44, Hosur', lat: 12.7409, lng: 77.8253 }
       ],
       fare: 450,
-      status: 'accepted',
-      busSchedule: {
-        start: 'Bengaluru Inter-City Terminal',
-        endpoint: 'Chennai Central Station',
-        schedule: [
-          { time: '08:00 AM', days: ['Monday', 'Wednesday', 'Friday'] }
-        ]
-      }
+      status: 'accepted'
     });
 
-    console.log('[Seed] Ride sample created.');
-
-    // 4. Create Parcel (Assigned to ParcelAdmin)
-    const demoParcel = await Parcel.create({
+    // 5. Create Vendor Request (Linking Location -> Selected Service -> VendorAdmin Profile)
+    const demoVendorReq = await Vendor.create({
       userId: user._id,
       phone: '9876543210',
-      pickup: 'Warehouse A, Whitefield',
-      pickupLocation: { city: 'Mumbai', state: 'MH', district: 'Mumbai City', pinCode: '400001' },
-      packageName: 'Electronics & Spare Cables',
-      packageWeight: 5.5,
-      recipientName: 'Rahul Sharma',
-      recipientPhone: '9123456789',
-      recipientAddress: 'Flat 302, Sea Crest Apartments, Marine Lines',
-      acceptedAdmins: [
-        {
-          adminId: parcelAdmin._id,
-          name: parcelAdmin.name,
-          phone: parcelAdmin.phone,
-          profilePhoto: parcelAdmin.profilePhoto,
-          profession: 'Express Courier Dispatch Admin'
-        }
-      ],
-      status: 'in_transit'
-    });
-
-    console.log('[Seed] Parcel sample created.');
-
-    // 5. Create Freight (Assigned to FreightAdmin)
-    const demoFreight = await Freight.create({
-      userId: user._id,
-      phone: '9876543210',
-      pickup: 'Industrial Hub, Ennore',
-      pickupLocation: { city: 'Chennai', state: 'TN', district: 'Chennai', pinCode: '600057' },
-      packageName: 'Machinery Heavy Spare Parts',
-      packageWeight: 450.0,
-      recipientName: 'Suresh Kumar',
-      recipientPhone: '9884012345',
-      recipientAddress: 'Plot 45, Auto Nagar, Visakhapatnam',
-      acceptedAdmins: [
-        {
-          adminId: freightAdmin._id,
-          name: freightAdmin.name,
-          phone: freightAdmin.phone,
-          profilePhoto: freightAdmin.profilePhoto,
-          profession: 'Heavy Freight Logistics Admin'
-        }
-      ],
-      status: 'pending'
-    });
-
-    console.log('[Seed] Freight sample created.');
-
-    // 6. Create Vendor Service Request (Assigned to VendorAdmin)
-    const demoVendor = await Vendor.create({
-      userId: user._id,
-      phone: '9876543210',
-      profession: 'Vehicle Mechanic / Breakdown Support',
-      location: 'Connaught Place',
+      serviceName: 'Roadside Towing',
+      profession: 'Roadside Towing',
+      location: 'Connaught Place Metro Station Gate 2',
       locationDetails: { city: 'Delhi NCR', state: 'Delhi' },
-      description: 'Roadside car battery jumpstart and towing required immediately',
+      description: 'Car engine stalled, need flatbed towing to authorized service center in Okhla.',
       status: 'accepted',
-      assignedVendorId: vendorAdmin._id,
+      assignedVendorId: vendorAdminDelhi._id,
       isActive: 'active'
     });
 
-    console.log('[Seed] Vendor service sample created.');
+    console.log('[Seed] Vendor breakdown service request created linking selected service and vendor admin!');
 
-    // 7. Create Fleet (Assigned to RideAdmin)
-    await Fleet.create({
-      adminId: rideAdmin._id,
-      name: 'Express Traveler Coach',
-      model: 'Force Traveller 2024 Luxury',
-      number: 'KA-01-MJ-9999',
-      type: 'bus',
-      fuelType: 'EV',
-      acType: 'AC',
-      sleeperType: 'Sleeper',
-      seatCapacity: 24,
-      routes: [
-        {
-          start: 'Bengaluru',
-          endpoint: 'Chennai',
-          schedule: [
-            { time: '08:00 AM', days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'] }
-          ]
-        }
-      ]
-    });
-
-    console.log('[Seed] Fleet vehicle sample created.');
-
-    // 8. Create Partner Onboarding Application
-    await Partner.create({
-      name: 'Jitesh Mishra',
-      email: 'jitesh@example.com',
-      phone: '9876543210',
-      businessName: 'Mishra Commercial Cabs',
-      serviceType: 'All',
-      location: 'Bengaluru',
-      additionalInfo: 'Operating fleet of 10 commercial cabs and heavy cargo loaders.',
-      status: 'pending'
-    });
-
-    console.log('[Seed] Partner onboarding application sample created.');
-
-    // 9. Create Support Contact Ticket
-    await Contact.create({
-      name: 'Virat Singh',
-      email: 'virat@example.com',
-      subject: 'Delivery Query #6b283d',
-      message: 'Parcel delivery status is showing in_transit, please confirm expected arrival time.',
-      role: 'user',
-      status: 'open'
-    });
-
-    console.log('[Seed] Contact ticket sample created.');
-
-    // 10. Create Review
-    await Review.create({
-      userId: user._id,
-      relatedOrderId: demoRide._id,
-      orderType: 'ride',
-      rating: 5,
-      title: 'Great Bus Trip',
-      ratingMessage: 'Excellent driving, punctual arrival, and very clean vehicle seats!'
-    });
-
-    console.log('[Seed] Review sample created.');
-
-    console.log('\n[Seed Success] All 6 Admins with Location Data and 12 Whekel modules populated successfully!');
+    console.log('\n[Seed Success] Vendor system with Master Catalog, Vendor Admin offered services, and Location Filtering seeded successfully!');
     process.exit(0);
   } catch (error) {
     console.error('[Seed Error]:', error);

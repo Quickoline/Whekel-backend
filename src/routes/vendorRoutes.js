@@ -1,23 +1,42 @@
 import express from 'express';
 import {
-  createVendorRequest,
+  createMasterService,
+  getMasterServices,
+  updateMasterService,
+  deleteMasterService,
+  updateVendorOfferedServices,
+  getAvailableLocations,
+  getAvailableServicesByLocation,
+  getVendorAdminProfiles,
+  createVendorBooking,
   getMyVendorRequests,
-  getVendorRequestById,
   acceptVendorRequest,
   updateVendorStatus,
-  getAllVendorAdmin,
-  deleteVendorAdmin
+  getAllVendorAdmin
 } from '../controllers/vendorController.js';
 import { protect, authorizeRoles } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-router.post('/', protect, createVendorRequest);
+// 1. SuperAdmin Master Catalog Routes
+router.get('/catalog', getMasterServices);
+router.post('/catalog', protect, authorizeRoles('SuperAdmin'), createMasterService);
+router.put('/catalog/:id', protect, authorizeRoles('SuperAdmin'), updateMasterService);
+router.delete('/catalog/:id', protect, authorizeRoles('SuperAdmin'), deleteMasterService);
+
+// 2. Vendor Admin Choice of Services & Location Setup
+router.put('/admin/offered-services', protect, authorizeRoles('VendorAdmin', 'SuperAdmin'), updateVendorOfferedServices);
+
+// 3. User Flow: Select Location -> Available Services -> Vendor Admin Profiles
+router.get('/locations', getAvailableLocations);
+router.get('/services-by-location', getAvailableServicesByLocation);
+router.get('/providers-by-service', getVendorAdminProfiles);
+
+// 4. Booking & Order Lifecycle
+router.post('/book', protect, createVendorBooking);
 router.get('/my-requests', protect, getMyVendorRequests);
-router.get('/admin/all', protect, authorizeRoles('VendorAdmin', 'SuperAdmin'), getAllVendorAdmin);
-router.get('/:id', protect, getVendorRequestById);
 router.put('/:id/accept', protect, authorizeRoles('VendorAdmin', 'SuperAdmin'), acceptVendorRequest);
 router.put('/:id/status', protect, updateVendorStatus);
-router.delete('/:id', protect, authorizeRoles('VendorAdmin', 'SuperAdmin'), deleteVendorAdmin);
+router.get('/admin/all', protect, authorizeRoles('VendorAdmin', 'SuperAdmin'), getAllVendorAdmin);
 
 export default router;

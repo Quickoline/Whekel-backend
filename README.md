@@ -4,6 +4,26 @@ An exhaustive, production-ready Node.js, Express, MongoDB, and Socket.io REST & 
 
 ---
 
+## 🛠️ Vendor System Workflow (Location ➔ Service ➔ Vendor Admin Profiles)
+
+```
+[SuperAdmin] ──► Creates Master Vendor Services Catalog (Towing, Jumpstart, Mechanic)
+                       │
+[VendorAdmin] ──► Selects which Master Services to deliver in their Location (City/State)
+                       │
+[Passenger/User] ──► 1. Selects Location (e.g., "Delhi NCR")
+                       │
+                 ──► 2. Gets Available Services in that Location (GET /api/vendor/services-by-location)
+                       │
+                 ──► 3. Selects Service (e.g., "Roadside Towing")
+                       │
+                 ──► 4. Gets Vendor Admin Profiles List offering that service (GET /api/vendor/providers-by-service)
+                       │
+                 ──► 5. Books Vendor Service with Selected Vendor Admin (POST /api/vendor/book)
+```
+
+---
+
 ## 📊 Core Modules & Endpoint Reference Matrix
 
 | Module | Base Route | Auth / Role Required | Key Functionality |
@@ -13,7 +33,7 @@ An exhaustive, production-ready Node.js, Express, MongoDB, and Socket.io REST & 
 | **3. Ride Transport** | `/api/ride` | User, Driver, RideAdmin, LocalAdmin | Booking across 5 vehicle types (`bike`, `taxi`, `bus`, `local`, `other`), fare negotiation, bus route schedules |
 | **4. Parcel Courier** | `/api/parcel` | User, ParcelAdmin | Door-to-door courier dispatch, package weight calculation, recipient details, driver allocation |
 | **5. Freight & Logistics**| `/api/freight` | User, FreightAdmin | Heavy cargo transport, truck load assignment, commercial shipping |
-| **6. Vendor Services** | `/api/vendor` | User, VendorAdmin, Provider | Vehicle mechanics, breakdown support, battery jumpstart, roadside assistance |
+| **6. Vendor Services** | `/api/vendor` | User, VendorAdmin, SuperAdmin | Location-based vendor service discovery, Master catalog, Vendor Admin profile listing & booking |
 | **7. Fleet & Vehicles** | `/api/fleet` | Public, Driver, Admin | Vehicle fleet listings, capacity specs (`EV`/`CNG`, `AC`/`Non AC`, `Sleeper`), bus routes |
 | **8. Partner Onboarding**| `/api/partner` | Public (Apply), SuperAdmin | Driver/partner applications, provider onboarding desk & approval lifecycle |
 | **9. Audio Calls** | `/api/call` | User, Admin, Driver | Peer-to-peer WebRTC audio call session logging and room management |
@@ -23,46 +43,23 @@ An exhaustive, production-ready Node.js, Express, MongoDB, and Socket.io REST & 
 
 ---
 
-## ⚡ Socket.io Real-Time & WebRTC Events
+## 🛠️ Vendor System API Endpoints
 
-- **Instant Messaging**:
-  - `join_chat`: Join room `conversationId`
-  - `send_message`: Emit message to room
-  - `receive_message`: Incoming message broadcast
-  - `typing`: Typing indicator state
-- **WebRTC Audio Calls**:
-  - `join_call_room`: Join WebRTC call room
-  - `call_offer`: WebRTC SDP Offer exchange
-  - `call_answer`: WebRTC SDP Answer exchange
-  - `ice_candidate`: ICE Candidate exchange
-  - `end_call`: Terminate active call session
+- `GET /api/vendor/locations` - Step 1: List active vendor cities
+- `GET /api/vendor/services-by-location?city=Delhi NCR` - Step 2: List available services offered in location
+- `GET /api/vendor/providers-by-service?city=Delhi NCR&serviceName=Roadside Towing` - Step 3: Fetch Vendor Admin profiles list for selected location & service
+- `POST /api/vendor/book` - Step 4: Book service with selected Vendor Admin
+- `PUT /api/vendor/admin/offered-services` - Vendor Admin chooses offered services & location
+- `POST /api/vendor/catalog` - SuperAdmin creates master service
+- `GET /api/vendor/catalog` - Get master catalog
 
 ---
 
-## 🛠️ Quick Start & Installation
+## ⚡ Quick Start & Installation
 
-### 1. Install Dependencies
 ```bash
 npm install
-```
-
-### 2. Configure Environment
-Edit `.env` (or copy from `.env.example`):
-```env
-PORT=5000
-MONGODB_URI=mongodb://127.0.0.1:27017/whekel_db
-JWT_SECRET=whekel_super_secret_jwt_key_2026_secure
-JWT_EXPIRE=30d
-NODE_ENV=development
-```
-
-### 3. Seed Initial Database Data
-```bash
 npm run seed
-```
-
-### 4. Run Development Server
-```bash
 npm run dev
 ```
 
