@@ -1,24 +1,37 @@
 import Conversation from '../models/Chat.js';
 import Message from '../models/Message.js';
 
-// Get or Create Conversation for Vendor / Order Chat
+// Get or Create Conversation for Order Chat (Compulsory Order Required)
 export const getOrCreateConversation = async (req, res) => {
   try {
-    const { conversationId: reqConvId, relatedOrderId, relatedOrderType, partnerId, vendorId, vendorAdminId } = req.body;
+    const { relatedOrderId, relatedOrderType, partnerId, vendorAdminId, vendorId } = req.body;
 
-    const targetPartnerId = partnerId || vendorAdminId || vendorId || req.user._id;
-    const targetOrderType = relatedOrderType || 'vendor';
-    const targetOrderId = relatedOrderId || targetPartnerId;
+    if (!relatedOrderId) {
+      return res.status(400).json({
+        success: false,
+        message: 'relatedOrderId is compulsory. You must create an order before initiating a chat.'
+      });
+    }
 
-    const conversationId = reqConvId || `conv_${targetOrderType}_${targetOrderId}`;
+    const orderType = relatedOrderType || 'vendor';
+    const targetPartnerId = partnerId || vendorAdminId || vendorId;
+
+    if (!targetPartnerId) {
+      return res.status(400).json({
+        success: false,
+        message: 'partnerId / vendorAdminId is required to start order chat'
+      });
+    }
+
+    const conversationId = `conv_${orderType}_${relatedOrderId}`;
 
     let conversation = await Conversation.findOne({ conversationId });
 
     if (!conversation) {
       conversation = await Conversation.create({
         conversationId,
-        relatedOrderId: targetOrderId,
-        relatedOrderType: targetOrderType,
+        relatedOrderId,
+        relatedOrderType: orderType,
         participants: [
           { userId: req.user._id, userModel: req.accountType === 'Admin' ? 'Admin' : 'UserAuth' },
           { userId: targetPartnerId, userModel: req.accountType === 'Admin' ? 'UserAuth' : 'Admin' }
@@ -40,6 +53,10 @@ export const getOrCreateConversation = async (req, res) => {
 export const sendMessage = async (req, res) => {
   try {
     const { conversationId, messageType, text, attachment } = req.body;
+
+    if (!conversationId) {
+      return res.status(400).json({ success: false, message: 'conversationId is required' });
+    }
 
     const message = await Message.create({
       conversationId,
