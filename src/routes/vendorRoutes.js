@@ -64,9 +64,11 @@ router.get('/locations', getAvailableLocations);
 router.get('/services-by-location', getAvailableServicesByLocation);
 router.get('/providers-by-service', getVendorAdminProfiles);
 
-// 4. Booking & Order Lifecycle
+// 4. Booking & Order History Lifecycle
 router.post('/book', protect, createVendorBooking);
 router.get('/my-requests', protect, getMyVendorRequests);
+router.get('/my-orders', protect, getMyVendorRequests);
+router.get('/orders/user', protect, getMyVendorRequests);
 router.put('/:id/accept', protect, authorizeRoles('VendorAdmin', 'SuperAdmin'), acceptVendorRequest);
 router.put('/:id/status', protect, updateVendorStatus);
 router.get('/admin/all', protect, authorizeRoles('VendorAdmin', 'SuperAdmin'), getAllVendorAdmin);

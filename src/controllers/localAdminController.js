@@ -79,8 +79,7 @@ export const deleteTourOption = async (req, res) => {
 };
 
 // ==========================================
-// 2. USER: TOUR BOOKING FORM SUBMISSION
-//    (LocalAdmin gets order and calls user - No chat)
+// 2. USER: TOUR BOOKING & USER HISTORY
 // ==========================================
 
 export const createTourBooking = async (req, res) => {
@@ -123,6 +122,18 @@ export const createTourBooking = async (req, res) => {
       message: 'Tour booking request submitted successfully. LocalAdmin will call you directly.',
       data: booking
     });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const getMyTourBookings = async (req, res) => {
+  try {
+    const bookings = await Tour.find({ userId: req.user._id })
+      .populate('assignedLocalAdminId', 'name phone email')
+      .sort({ createdAt: -1 });
+
+    res.json({ success: true, count: bookings.length, data: bookings });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -172,8 +183,7 @@ export const updateTourStatus = async (req, res) => {
 };
 
 // ==========================================
-// 3. USER: MINI TRANSPORT BOOKING FORM SUBMISSION
-//    (Same as Tour except NO dropdown selection - LocalAdmin calls user)
+// 3. USER: MINI TRANSPORT BOOKING & USER HISTORY
 // ==========================================
 
 export const createMiniTransportBooking = async (req, res) => {
@@ -202,6 +212,18 @@ export const createMiniTransportBooking = async (req, res) => {
       message: 'Mini Transport booking request submitted successfully. LocalAdmin will call you directly.',
       data: booking
     });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const getMyMiniTransportBookings = async (req, res) => {
+  try {
+    const bookings = await MiniTransport.find({ userId: req.user._id })
+      .populate('assignedLocalAdminId', 'name phone email')
+      .sort({ createdAt: -1 });
+
+    res.json({ success: true, count: bookings.length, data: bookings });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
