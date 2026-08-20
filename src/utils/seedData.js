@@ -13,6 +13,9 @@ import Fleet from '../models/Fleet.js';
 import Partner from '../models/Partner.js';
 import Contact from '../models/Contact.js';
 import Review from '../models/Review.js';
+import TourOption from '../models/TourOption.js';
+import Tour from '../models/Tour.js';
+import MiniTransport from '../models/MiniTransport.js';
 import { uploadFileToS3 } from './s3Uploader.js';
 
 dotenv.config();
@@ -35,6 +38,9 @@ const seed = async () => {
     await Partner.deleteMany({});
     await Contact.deleteMany({});
     await Review.deleteMany({});
+    await TourOption.deleteMany({});
+    await Tour.deleteMany({});
+    await MiniTransport.deleteMany({});
 
     console.log('[Seed] Cleared old collections...');
 
@@ -111,7 +117,7 @@ const seed = async () => {
       profilePhoto: viratPhotoUrl
     });
 
-    // 4. Seed VendorAdmin 1: Virat Singh (Virat Repair Shop, 9889765643, homeService: true)
+    // 4. Seed VendorAdmin 1: Virat Singh (Virat Repair Shop, 9889765643)
     const viratVendorAdmin = await Admin.create({
       name: 'Virat Singh',
       email: 'viratsingh@whekel.com',
@@ -133,7 +139,7 @@ const seed = async () => {
       profilePhoto: viratPhotoUrl
     });
 
-    // 5. Seed VendorAdmin 2: Viraj Gupta (Viraj Sweet Shop, 9078564534, homeService: false)
+    // 5. Seed VendorAdmin 2: Viraj Gupta (Viraj Sweet Shop, 9078564534)
     const virajVendorAdmin = await Admin.create({
       name: 'Viraj Gupta',
       email: 'virajgupta@whekel.com',
@@ -155,93 +161,61 @@ const seed = async () => {
       profilePhoto: virajPhotoUrl
     });
 
-    const vendorAdminDelhi = await Admin.create({
-      name: 'Karan Towing & Breakdown Support Admin',
-      email: 'vendoradmin@whekel.com',
-      phone: '9876543244',
-      password: 'password123',
-      role: 'VendorAdmin',
-      serviceLocation: { city: 'Delhi NCR', district: 'New Delhi', pinCode: '110001', state: 'Delhi', serviceRadiusKm: 60 },
-      assignedServices: allServiceNames,
-      vendorProfile: {
-        shopName: 'Delhi Towing Hub',
-        isVendorActive: true,
-        homeServiceAvailable: true,
-        offeredServices: ['Roadside Towing', 'Battery Jumpstart', 'Flat Tire Replacement', 'Emergency Fuel Delivery'],
-        pricingEstimate: '₹400 Base Rate + ₹20/km',
-        rating: 4.8,
-        completedJobs: 89,
-        bio: '24/7 Rapid Response Towing & Battery Specialist in Delhi NCR'
-      },
-      profilePhoto: viratPhotoUrl
-    });
-
-    const vendorAdminMumbai = await Admin.create({
-      name: 'Mumbai Marine Drive Breakdown Services',
-      email: 'vendormumbai@whekel.com',
-      phone: '9876543277',
-      password: 'password123',
-      role: 'VendorAdmin',
-      serviceLocation: { city: 'Mumbai', district: 'Mumbai City', pinCode: '400001', state: 'Maharashtra', serviceRadiusKm: 65 },
-      assignedServices: allServiceNames,
-      vendorProfile: {
-        shopName: 'Mumbai Marine Garage',
-        isVendorActive: true,
-        homeServiceAvailable: true,
-        offeredServices: allServiceNames,
-        pricingEstimate: '₹450 Base Charge',
-        rating: 4.7,
-        completedJobs: 76,
-        bio: 'Citywide Emergency Breakdown & Towing Team in Mumbai'
-      },
-      profilePhoto: virajPhotoUrl
-    });
-
-    const rideAdmin = await Admin.create({
-      name: 'Ramesh Driver / Ride Admin (South Zone)',
-      email: 'rideadmin@whekel.com',
-      phone: '9876543211',
-      password: 'password123',
-      role: 'RideAdmin',
-      serviceLocation: { city: 'Bengaluru', district: 'Bengaluru Urban', pinCode: '560001', state: 'Karnataka', serviceRadiusKm: 100 },
-      assignedServices: ['Bike', 'Taxi', 'Bus', 'Local Transport', 'Multi-Stop Schedule'],
-      profilePhoto: viratPhotoUrl
-    });
-
-    const parcelAdmin = await Admin.create({
-      name: 'Anita Courier Dispatch Admin (West Zone)',
-      email: 'parceladmin@whekel.com',
-      phone: '9876543222',
-      password: 'password123',
-      role: 'ParcelAdmin',
-      serviceLocation: { city: 'Mumbai', district: 'Mumbai City', pinCode: '400001', state: 'Maharashtra', serviceRadiusKm: 75 },
-      assignedServices: ['Door-to-Door Courier', 'Express Parcel', 'Weight-based Delivery'],
-      profilePhoto: virajPhotoUrl
-    });
-
-    const freightAdmin = await Admin.create({
-      name: 'Vikram Heavy Freight Logistics Admin',
-      email: 'freightadmin@whekel.com',
-      phone: '9876543233',
-      password: 'password123',
-      role: 'FreightAdmin',
-      serviceLocation: { city: 'Chennai', district: 'Chennai', pinCode: '600001', state: 'Tamil Nadu', serviceRadiusKm: 250 },
-      assignedServices: ['Heavy Machinery Transport', 'Inter-City Bulk Shipping', 'Truck Load Logistics'],
-      profilePhoto: viratPhotoUrl
-    });
-
+    // 6. Seed LocalAdmin
     const localAdmin = await Admin.create({
       name: 'Suresh City Metro Local Transport Admin',
       email: 'localadmin@whekel.com',
       phone: '9876543255',
       password: 'password123',
       role: 'LocalAdmin',
-      serviceLocation: { city: 'Pune', district: 'Pune', pinCode: '411001', state: 'Maharashtra', serviceRadiusKm: 40 },
-      assignedServices: ['Auto Rickshaw', 'Local Shuttle Bus', 'City Commute'],
+      serviceLocation: { city: 'Bengaluru', district: 'Bengaluru Urban', pinCode: '560001', state: 'Karnataka', serviceRadiusKm: 50 },
+      assignedServices: ['Tour', 'Mini Transport', 'Auto Rickshaw', 'Shuttle Bus'],
       profilePhoto: virajPhotoUrl
     });
 
-    // Create Sample Passenger User
+    // 7. Seed LocalAdmin Tour Dropdown Vehicle Options
+    await TourOption.create([
+      {
+        createdBy: localAdmin._id,
+        vehicleName: 'Innova Crysta',
+        vehicleModel: 'Luxury Executive 2024',
+        fuelType: 'Diesel',
+        acType: 'AC',
+        seatCapacity: '7 Seater',
+        basePrice: 3500
+      },
+      {
+        createdBy: localAdmin._id,
+        vehicleName: 'Tempo Traveller',
+        vehicleModel: 'Deluxe Pushback 2024',
+        fuelType: 'Diesel',
+        acType: 'AC',
+        seatCapacity: '12 Seater',
+        basePrice: 6500
+      },
+      {
+        createdBy: localAdmin._id,
+        vehicleName: 'Force Urbania',
+        vehicleModel: 'VIP Luxury 2025',
+        fuelType: 'Diesel',
+        acType: 'AC',
+        seatCapacity: '17 Seater',
+        basePrice: 9000
+      },
+      {
+        createdBy: localAdmin._id,
+        vehicleName: 'Swift Dzire',
+        vehicleModel: 'Sedan Comfort 2023',
+        fuelType: 'CNG',
+        acType: 'AC',
+        seatCapacity: '4 Seater',
+        basePrice: 2200
+      }
+    ]);
+
+    console.log('[Seed] LocalAdmin Tour vehicle dropdown options created.');
+
+    // 8. Create Sample User Passenger
     const user = await UserAuth.create({
       name: 'Virat Singh',
       email: 'virat@example.com',
@@ -252,34 +226,38 @@ const seed = async () => {
       role: 'user'
     });
 
-    console.log('[Seed] Seeded Virat Singh (Virat Repair Shop) & Viraj Gupta (Viraj Sweet Shop) for EVERY service!');
-
-    // 6. Create General Info
-    await GeneralInfo.create({
-      title: 'Whekel Mobility',
-      tagline: 'All In One Transport App',
-      categories: ['Ride', 'Parcel', 'Freight', 'Vendor'],
-      steps: [
-        { stepNumber: 1, title: 'Discover', description: 'Select your city/location, browse available breakdown services, and choose a verified vendor provider.' },
-        { stepNumber: 2, title: 'Book & Negotiate', description: 'Direct service booking with instant vendor dispatch.' },
-        { stepNumber: 3, title: 'Pay & Track', description: 'Real-time vendor tracking and transparent billing.' }
-      ],
-      whyChooseUs: [
-        { title: 'Location-Based Vendor Search', description: 'Find roadside assistance tailored specifically to your current city, district, or pincode.', icon: 'my_location' },
-        { title: 'Verified Vendor Profiles', description: 'Choose from rated vendor admins with transparent pricing and review stats.', icon: 'verified' }
-      ],
-      features: ['Roadside Towing', 'Battery Jumpstart', 'Mobile Car Mechanic', 'Flat Tire Repair', 'Fuel Delivery'],
-      howItWorks: ['Select Location (city, district, pincode)', 'Pick Service', 'Choose Vendor Admin Profile', 'Track Arrival'],
-      onboardingInfo: 'Join over 10,000+ verified vendor admins on the network.'
+    // 9. Create Contact Query for SuperAdmin Review
+    await Contact.create({
+      userId: user._id,
+      name: 'Virat Singh',
+      phone: '9876543210',
+      email: 'virat@example.com',
+      subject: 'Franchise Partner Inquiry',
+      message: 'Inquiring about franchise partner onboarding for South Bengaluru zone.',
+      queryMessage: 'Inquiring about franchise partner onboarding for South Bengaluru zone.'
     });
 
-    // 7. Create Active Breakdown Request with ONLY the selected vendor ID in vendorsListIds
-    const demoVendorReq = await Vendor.create({
+    // 10. Create Partner Onboarding Application for SuperAdmin Review
+    await Partner.create({
+      userId: user._id,
+      name: 'Virat Singh',
+      email: 'virat@example.com',
+      phone: '9876543210',
+      businessName: 'Virat Mobility & Breakdown Services',
+      serviceType: 'Vendor',
+      location: 'Bengaluru, Karnataka',
+      partnerType: 'Vendor',
+      documentUrl: viratPhotoUrl,
+      status: 'pending'
+    });
+
+    // 11. Create Sample Vendor Breakdown Order
+    await Vendor.create({
       userId: user._id,
       serviceId: roadsideTowingService ? roadsideTowingService._id : null,
       serviceName: 'Roadside Towing',
       profession: 'Roadside Towing',
-      vendorsListIds: [viratVendorAdmin._id], // ONLY the selected vendor ID
+      vendorsListIds: [viratVendorAdmin._id],
       assignedVendorId: viratVendorAdmin._id,
       phone: '9889765643',
       location: 'MG Road Metro Station',
@@ -289,7 +267,33 @@ const seed = async () => {
       isActive: 'active'
     });
 
-    console.log('\n[Seed Success] Order body updated with userId, serviceId, and ONLY selected vendor ID in vendorsListIds!');
+    // 12. Create Sample Tour Booking Order for LocalAdmin (Calls User directly)
+    await Tour.create({
+      userId: user._id,
+      currentLocation: 'Indiranagar 100ft Road',
+      destination: 'Nandi Hills Sunrise Point',
+      pinCode: '560038',
+      phone: '9876543210',
+      vehicleName: 'Innova Crysta',
+      vehicleModel: 'Luxury Executive 2024',
+      fuelType: 'Diesel',
+      acType: 'AC',
+      seatCapacity: '7 Seater',
+      status: 'pending'
+    });
+
+    // 13. Create Sample Mini Transport Booking Order for LocalAdmin (Calls User directly)
+    await MiniTransport.create({
+      userId: user._id,
+      currentLocation: 'Electronic City Phase 1',
+      destination: 'Koramangala 5th Block',
+      pinCode: '560100',
+      phone: '9876543210',
+      goodsType: 'Office Furniture & Electronic Equipment',
+      status: 'pending'
+    });
+
+    console.log('\n[Seed Success] SuperAdmin, VendorAdmin & LocalAdmin (Tour & Mini Transport) seeded successfully!');
     process.exit(0);
   } catch (error) {
     console.error('[Seed Error]:', error);

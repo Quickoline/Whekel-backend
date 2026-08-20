@@ -14,6 +14,7 @@ import rideRoutes from './src/routes/rideRoutes.js';
 import parcelRoutes from './src/routes/parcelRoutes.js';
 import freightRoutes from './src/routes/freightRoutes.js';
 import vendorRoutes from './src/routes/vendorRoutes.js';
+import localAdminRoutes from './src/routes/localAdminRoutes.js';
 import fleetRoutes from './src/routes/fleetRoutes.js';
 import partnerRoutes from './src/routes/partnerRoutes.js';
 import callRoutes from './src/routes/callRoutes.js';
@@ -64,7 +65,8 @@ app.get('/', (req, res) => {
       '9. Audio Calls (A)',
       '10. Contact & Support (WA)',
       '11. Chat & Messaging (A)',
-      '12. Reviews & Ratings (A)'
+      '12. Reviews & Ratings (A)',
+      '13. LocalAdmin Tour & Mini Transport'
     ]
   });
 });
@@ -77,6 +79,8 @@ app.use('/api/parcel', parcelRoutes);
 app.use('/api/freight', freightRoutes);
 app.use('/api/vendor', vendorRoutes);
 app.use('/api/admin/vendor', vendorRoutes); // Enables /api/admin/vendor/* routes
+app.use('/api/localadmin', localAdminRoutes);
+app.use('/api/local-admin', localAdminRoutes);
 app.use('/api/fleet', fleetRoutes);
 app.use('/api/partner', partnerRoutes);
 app.use('/api/call', callRoutes);
